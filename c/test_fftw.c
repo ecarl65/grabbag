@@ -30,9 +30,9 @@ int main(int argc, char * argv[]) {
   fftwf_complex * output = (fftwf_complex *) fftwf_malloc(sizeof(fftwf_complex) * N);
 
   // FFTW Plan
-  int wise = fftwf_import_wisdom_from_filename("/home/eric/programming/c/rof1024");
+  int wise = fftwf_import_wisdom_from_filename("rof1024");
   fftwf_plan p = fftwf_plan_dft_r2c_1d(N, vec, output, FFTW_EXHAUSTIVE);
-  /* int writ = fftwf_export_wisdom_to_filename("/home/eric/programming/c/rof1024"); */
+  int writ = fftwf_export_wisdom_to_filename("rof1024");
 
   // Populate input
   for (size_t idx = 0; idx < N; idx++) {
@@ -47,7 +47,7 @@ int main(int argc, char * argv[]) {
 
   // Output result
   for (size_t idx = 0; idx <= N/2; idx++) {
-    /* printf("(%f+%fj)\n", creal(output[idx]), cimag(output[idx])); */
+    /* printf("(%f%+fj)\n", creal(output[idx]), cimag(output[idx])); */
   }
   
   // Free memory
@@ -75,9 +75,10 @@ int main(int argc, char * argv[]) {
   int ostride = 1;
   int *inembed = n_size;
   int *onembed = n_size;
-  fftwf_plan p2d = fftwf_plan_many_dft_r2c(rank, n_size, dim1, vec2d, inembed,
-      istride, idist, ovec2d, onembed, ostride, odist, FFTW_ESTIMATE);
-  /* int writ = fftwf_export_wisdom_to_filename("/home/eric/programming/c/rof1024"); */
+  wise = fftwf_import_wisdom_from_filename("rof32x1024");
+  fftwf_plan p2d = fftwf_plan_many_dft_r2c(rank, n_size, howmany, vec2d, inembed, istride, idist, ovec2d,
+                                  onembed, ostride, odist, FFTW_ESTIMATE);
+  writ = fftwf_export_wisdom_to_filename("rof32x1024");
 
   fftwf_execute(p2d);
 
@@ -85,7 +86,7 @@ int main(int argc, char * argv[]) {
   for (size_t idx1 = 0; idx1 < dim1; idx1++) {
     for (size_t idx2 = 0; idx2 < dim2; idx2++) {
       /* printf("%f ", *(vec2d + idx1 * dim2 + idx2)); */
-      printf("(%f+%fj) ", creal(*(ovec2d + idx1 * dim2 + idx2)), cimag(*(ovec2d + idx1 * dim2 + idx2)));
+      printf("(%f%+fj) ", creal(*(ovec2d + idx1 * dim2 + idx2)), cimag(*(ovec2d + idx1 * dim2 + idx2)));
     }
     printf("\n");
   }
