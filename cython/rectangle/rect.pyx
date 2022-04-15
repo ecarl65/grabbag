@@ -1,6 +1,10 @@
 # distutils: language = c++
 
 from Rectangle cimport Rectangle
+cimport numpy as np
+import numpy as np
+
+np.import_array()
 
 # Create a Cython extension type which holds a C++ instance
 # as an attribute and create a bunch of forwarding methods
@@ -27,6 +31,19 @@ cdef class PyRectangle:
         x_0 = self.c_rect.getX0()
         y_0 = self.c_rect.getY0()
         return x_0, y_0
+
+    def set_integer_arr_ptr(self, a_np):
+        cdef np.ndarray[int, ndim=1, mode='c'] a
+        a = np.zeros((4,), dtype=np.int32)
+
+        for v in range(len(a_np)):
+            a[v] = a_np[v]
+
+        self.c_rect.set_integer_arr_ptr(&a[0])
+
+        for v in range(len(a)):
+            a_np[v] = a[v]
+
 
     # Attribute access
     @property

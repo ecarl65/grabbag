@@ -14,3 +14,4 @@ cdef extern from "Rectangle.h" namespace "shapes":
         int getY0()
         int getY1()
         void move(int, int)
+        void set_integer_arr_ptr(int* a)

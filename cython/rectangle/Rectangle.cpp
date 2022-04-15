@@ -69,4 +69,11 @@ namespace shapes {
         this->x1 += dx;
         this->y1 += dy;
     }
+
+    void Rectangle::set_integer_arr_ptr(int* a) {
+      a[0] = 1;
+      a[1] = 3;
+      a[2] = 4;
+      a[3] = 7;
+    }
 }
