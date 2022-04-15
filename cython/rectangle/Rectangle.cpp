@@ -16,7 +16,8 @@
  * =====================================================================================
  */
 #include <stdlib.h>
-
+#include <vector>
+#include <algorithm>
 
 #include <iostream>
 #include "Rectangle.h"
@@ -71,9 +72,12 @@ namespace shapes {
     }
 
     void Rectangle::set_integer_arr_ptr(int* a) {
-      a[0] = 1;
-      a[1] = 3;
-      a[2] = 4;
-      a[3] = 7;
+      std::vector<int> d(4);
+      d[0] = 1;
+      d[1] = 3;
+      d[2] = 4;
+      d[3] = 7;
+
+      std::copy(d.begin(), d.end(), a);
     }
 }
