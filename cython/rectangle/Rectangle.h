@@ -33,6 +33,7 @@ namespace shapes {
       int getX1();
       int getY0();
       int getY1();
+      void set_integer_arr_ptr(int* a);
   };
 }
 
