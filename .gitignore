@@ -1,3 +1,5 @@
 cython/cython-dsp
 *.o
 *.so
+add
+add_cuda
