@@ -3,3 +3,5 @@ cython/cython-dsp
 *.so
 add
 add_cuda
+nim/example
+
