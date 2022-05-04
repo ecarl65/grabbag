@@ -1,3 +1,5 @@
+#!/usr/bin/env julia
+
 using FFTW
 using Plots
 
@@ -15,6 +17,6 @@ p1 = plot(original_k,abs.(original_fft),title="Original FFT", xticks=original_k[
 p1 = plot!([1,7,18],abs.(original_fft[[1,7,18]]),markershape=:circle,markersize=6,linecolor="white");
 p2 = plot(shifted_k,abs.(shifted_fft),title="Shifted FFT",xticks=shifted_k[1:2:end], legend=false, ylims=(0,70));
 p2 = plot!([-4,0,6],abs.(shifted_fft[[7,11,17]]),markershape=:circle,markersize=6,linecolor="white");
-plot(p1,p2,layout=(2,1))
+display(plot(p1,p2,layout=(2,1)))
 
 readline()
