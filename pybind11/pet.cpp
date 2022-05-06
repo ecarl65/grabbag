@@ -26,6 +26,7 @@ PYBIND11_MODULE(pet, m) {
     py::class_<Pet>(m, "Pet")
         .def(py::init<const std::string &>())
         .def("setName", &Pet::setName)
-        .def("getName", &Pet::getName);
+        .def("getName", &Pet::getName)
+        .def("nump", &Pet::nump);
 }
 
