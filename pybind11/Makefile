@@ -7,19 +7,19 @@ EXT=$(shell python3.8-config --extension-suffix)
 all: example iteration_mod pet
 
 example: example.cpp
-	$(CXX) -shared $(CXXFLAGS) $(CPPFLAGS) $< -o $@$(shell python3.8-config --extension-suffix)
+	$(CXX) -shared $(CXXFLAGS) $(CPPFLAGS) $< -o $@$(EXT)
 
 iteration_mod: iteration_mod.cpp
-	$(CXX) -shared $(CXXFLAGS) $< -o $@$(shell python3.8-config --extension-suffix)
+	$(CXX) -shared $(CXXFLAGS) $< -o $@$(EXT)
 
 pet: pet.o Pet.o
-	$(CXX) -shared -o $@$(shell python3.8-config --extension-suffix) $(CXXFLAGS) $< 
+	$(CXX) -shared -o $@$(EXT) $(CXXFLAGS) $^
 
 pet.o: pet.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $<
 
 Pet.o: Pet.cpp Pet.h
-	$(CXX) -O3 -Wall -fopenmp -std=c++11 -fPIC -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $<
 
 clean:
 	rm -f *.so *.o
