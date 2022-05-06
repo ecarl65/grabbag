@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  Pet.cpp
+ *       Filename:  pet.cpp
  *
  *    Description:  Object oriented version of pybind11
  *
