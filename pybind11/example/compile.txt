@@ -1,1 +1,0 @@
-c++ -O3 -Wall -shared -std=c++11 -fPIC -I/usr/include/python3.6m -I/home/eric/pv/lib64/python3.6/site-packages/pybind11/include example.cpp -o example.cpython-36m-x86_64-linux-gnu.so
