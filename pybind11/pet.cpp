@@ -16,13 +16,16 @@
  * =====================================================================================
  */
 #include <stdlib.h>
+#include <string>
+#include <pybind11/pybind11.h>
 #include "Pet.h"
 
-Pet::Pet(const std::string &name) : name(name) { }
-void Pet::setName(const std::string &name_) { 
-  name = name_;
-}
-const std::string &Pet::getName() {
-  return name;
+namespace py = pybind11;
+
+PYBIND11_MODULE(pet, m) {
+    py::class_<Pet>(m, "Pet")
+        .def(py::init<const std::string &>())
+        .def("setName", &Pet::setName)
+        .def("getName", &Pet::getName);
 }
 

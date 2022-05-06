@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  Pet.cpp
+ *       Filename:  Pet_obj.h
  *
  *    Description:  Object oriented version of pybind11
  *
@@ -16,13 +16,13 @@
  * =====================================================================================
  */
 #include <stdlib.h>
-#include "Pet.h"
+#include <string>
 
-Pet::Pet(const std::string &name) : name(name) { }
-void Pet::setName(const std::string &name_) { 
-  name = name_;
-}
-const std::string &Pet::getName() {
-  return name;
-}
+struct Pet {
+  Pet(const std::string &name);
+  void setName(const std::string &name_);
+  const std::string &getName();
+
+  std::string name;
+};
 
