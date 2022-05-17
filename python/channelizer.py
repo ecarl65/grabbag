@@ -6,7 +6,9 @@ from scipy import signal
 from scipy.fft import rfft
 import matplotlib.pyplot as plt
 
+# {{{ class Channelizer
 class Channelizer:
+    # {{{ __init__
     def __init__(self, sample_rate, decimation, overlap):
         self.sample_rate = sample_rate
         self.decimation = decimation
@@ -20,6 +22,9 @@ class Channelizer:
 
         self.freq_list = [np.arange(delta, self.sample_rate / 2, delta)]
 
+    # }}}
+
+    # {{{ _design_filter
     def _design_filter(self):
         stop_edge = self.sample_rate / (2 * self.decimation)
         pass_edge = self.sample_rate / (4 * self.decimation) + self.overlap / 2
@@ -59,7 +64,9 @@ class Channelizer:
         self.poly_filt = np.zeros((self.num_channels, up_size))
         self.poly_filt[:, ::2] = e_cs
 
+    # }}}
 
+    # {{{ _prepare_data
     def _prepare_data(self, data):
 
         half_channels = self.num_channels >> 1
@@ -76,6 +83,9 @@ class Channelizer:
 
         return data_poly
 
+    # }}}
+
+    # {{{ channelize
     def channelize(self, data):
 
         poly_data = self._prepare_data(data)
@@ -94,16 +104,20 @@ class Channelizer:
 
         return data_channelized[1 : self.decimation]
 
+    # }}}
 
+# }}}
+
+# {{{ __main__
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Test Channelizer")
+    parser = argparse.ArgumentParser(description="Test Channelizer", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("--sample-rate", help="Sample rate (Hz)", action="store", type=float, dest="sample_rate", default=None)
-    parser.add_argument("--overlap", help="Overlap (Hz)", action="store", type=float, default=None)
-    parser.add_argument("--decimation", help="Decimation factor", action="store", type=int, default=None)
-    parser.add_argument("--num-points", help="Number of test input points", action="store", type=int, dest="num_points", default=None)
+    parser.add_argument("--sample-rate", help="Sample rate (Hz)", action="store", type=float, dest="sample_rate", default=800)
+    parser.add_argument("--overlap", help="Overlap (Hz)", action="store", type=float, default=1)
+    parser.add_argument("--decimation", help="Decimation factor", action="store", type=int, default=32)
+    parser.add_argument("--num-points", help="Number of test input points", action="store", type=int, dest="num_points", default=100000)
     opts = parser.parse_args()
 
     time = np.arange(opts.num_points) / opts.sample_rate
@@ -131,4 +145,4 @@ if __name__ == "__main__":
 
     plt.show()
 
-
+# }}}
