@@ -115,7 +115,20 @@ if __name__ == "__main__":
     v_sig = chann.channelize(sig)
 
     # plot output
-    plt.plot(np.abs(v_sig.T))
+    #  plt.plot(np.abs(v_sig.T))
+
+    chan_max = v_sig.shape[0]
+    time_max = v_sig.shape[1]
+
+    delta = opts.decimation / opts.sample_rate
+    time_series = np.arange(time_max + 1) * delta + delta / 2
+    channs = np.arange(chan_max + 1) + 0.5
+
+    plt.pcolormesh(time_series, channs, np.abs(v_sig))
+    plt.xlabel("Time")
+    plt.ylabel("Channel")
+    plt.title("Channelizer Output Power")
+
     plt.show()
 
 
