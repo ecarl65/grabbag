@@ -1,6 +1,6 @@
 CXX=c++
 CXXFLAGS=-O3 -Wall -fopenmp -std=c++11 -fPIC  $(shell pybind11-config --includes)
-EXT=$(shell python3-config --extension-suffix)
+EXT=$(shell python3.8-config --extension-suffix)
 
 .PHONY: clean
 
