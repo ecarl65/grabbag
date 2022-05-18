@@ -106,6 +106,37 @@ class Channelizer:
 
     # }}}
 
+    # {{{ channelize_chunks
+    def channelize_chunks(self, data, outfile):
+        """Break channelizer into chunks of data and write output to file"""
+
+        if len(data) < 4 * self.proto_filt_len:
+            outdata = self.channelize(data)
+            # TODO Write outdata to outfile all at once
+            return True
+
+        # Since returned above don't need "else", reduce branch depth
+        num_overlap_save = 4 * self.proto_filt_len
+        num_valid = num_overlap_save - self.proto_filt_len + 1 # XXX Verify +1
+        num_buffers = len(data) // num_valid
+
+        for buff in range(num_buffers):
+            strt = num_valid * buff
+            stp = strt + num_overlap_save
+
+            data_chunk = data[strt:stp]
+
+            chunk_out = self.channelize(data_chunk)
+
+            # Figure out what to save
+            # If it were just FFT stuff it'd be
+            # chunk_out[self.proto_filt_len - 1 : ]
+            # But I don't think that's right for the channelizer
+
+
+
+        # Iterate through chunks and do some overlap
+
 # }}}
 
 # {{{ __main__
