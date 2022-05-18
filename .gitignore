@@ -1,6 +1,8 @@
 cython/cython-dsp
 *.o
 *.so
+*.png
+*.ppm
 add
 add_cuda
 add_cuda1
