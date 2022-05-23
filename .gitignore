@@ -3,6 +3,7 @@ cython/cython-dsp
 *.so
 *.png
 *.ppm
+*.bin
 add
 add_cuda
 add_cuda1
@@ -10,3 +11,5 @@ add_cuda2
 nim/example
 parallel_hello_world
 target
+osconv
+test_fftw
