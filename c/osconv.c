@@ -25,7 +25,7 @@
 int main(int argc, char **argv) {
   // Make input sinusoid
   const int Nbuf = 1024;
-  const int Nbufs = 1024;
+  const int Nbufs = 20;
   const int Nfull = Nbuf * Nbufs;
   const double pi = acosf(-1);
   const double Fs = 10e3;
@@ -61,8 +61,10 @@ int main(int argc, char **argv) {
   // Loop through number of buffers
   const int nv = Nbuf - Nfilt + 1;
   const int dstrt = Nfilt - 1;
-  for (int bn = 0; bn < Nbufs; bn++) {
-    int strt = bn * Nbuf;
+  const int num_loops = Nfull / nv;
+  printf("Doing %d loops\n", num_loops);
+  for (int bn = 0; bn < num_loops; bn++) {
+    int strt = bn * nv;
     // Copy input to buffer - TODO This shouldn't be necessary, make pointer point to array later?
     for (int m = 0; m < Nbuf; m++) {
       buf[m] = full_in[strt + m];
@@ -78,15 +80,18 @@ int main(int argc, char **argv) {
     fftw_execute(pinv);
 
     // Save only valid portion. Re-normalize inverse FFT.
-    int ostrt = nv * bn;
     for (int m = 0; m < nv; m++) {
-      full_out[m + nv * bn] = f_conv_out[m + dstrt] / Nbuf;
+      full_out[m + strt] = f_conv_out[m + dstrt] / Nbuf;
     }
   }
 
-  // Write output
+  // Write outputs
   FILE* dout = fopen("filtered.bin", "wb");
   fwrite(&full_out[0], sizeof(double), Nfull, dout);
+  FILE *din = fopen("input.bin", "wb");
+  fwrite(&full_in[0], sizeof(double), Nfull, din);
+  FILE *f_filt = fopen("filter.bin", "wb");
+  fwrite(&filt[0], sizeof(double), Nfilt, f_filt);
 
   // Free memory
   fftw_free(full_in);
