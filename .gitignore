@@ -9,3 +9,4 @@ add_cuda1
 add_cuda2
 nim/example
 parallel_hello_world
+target
