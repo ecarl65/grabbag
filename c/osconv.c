@@ -22,6 +22,7 @@
 #include <complex.h>
 #include <fftw3.h>
 #include <tgmath.h>
+#include <string.h>
 
 double coarse_gaussian() {
   double out = 0;
@@ -40,25 +41,40 @@ int main(int argc, char **argv) {
   const double pi = acosf(-1);
   const double Fs = 10e3;
   const double Ts = 1.0 / Fs;
+  const double fc = 100;
+  const double ff = 2 * fc;
   double *full_in = (double *) fftw_malloc(sizeof(double) * Nfull);
   srand(time(NULL));
   for (int m = 0; m < Nfull; m++) {
-    /* int r = rand() % 100; */
-    /* double rv = r / 1000.0f; */
-    full_in[m] = cos(2 * pi * 10 * m * Ts) + coarse_gaussian() / 10.0;
+    full_in[m] = cos(2 * pi * fc * m * Ts) + coarse_gaussian() / 10.0;
   }
   double *full_out = fftw_malloc(sizeof(double) * Nfull);
+  memset(&full_out[0], 0, sizeof(full_out[0]) * Nfull);
 
   // Make filter
   const int Nfilt = 129;
+  const int Nfilt_half = (Nfilt - 1) >> 1;
   double *filt = (double *) fftw_malloc(sizeof(double) * Nbuf);
-  for (int m = 0; m < Nfilt; m++) {
-    double sinc_idx = (m - 63.5) * 0.15 * 2 * pi;
-    /* filt[m] = sin(sinc_idx) / sinc_idx / pi; */
-    filt[m] = 1.0 / Nfilt;
+  int outidx = 0;
+  double filt_sum = 0;
+  for (int m = -Nfilt_half; m <= Nfilt_half; m++) {
+    // Sinc low pass filter at twice the SOI freq
+    if (m == 0) {
+      filt[outidx] = 2 * ff / Fs;
+    } else {
+      filt[outidx] = sin(2 * pi * ff * m / Fs) / (m * pi);
+    }
+
+    // Hamming window and normalization
+    filt[outidx] *= (0.54 - 0.46 * cos(2 * pi * outidx / Nfilt));
+    filt_sum += filt[outidx++];
   }
-  for (int m = Nfilt; m < Nbuf; m++) {
-    filt[m] = 0.0;
+  for (int m = 0; m < Nbuf; m++) {
+    if (m < Nfilt) {
+      filt[m] /= filt_sum;
+    } else {
+      filt[m] = 0.0f;
+    }
   }
   fftw_complex *f_filt_out = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nbuf);
   fftw_plan pfilt = fftw_plan_dft_r2c_1d(Nbuf, filt, f_filt_out, FFTW_ESTIMATE);
@@ -70,6 +86,8 @@ int main(int argc, char **argv) {
   fftw_plan psig = fftw_plan_dft_r2c_1d(Nbuf, buf, f_buf, FFTW_ESTIMATE);
   double *conv_out = (double *) fftw_malloc(sizeof(double) * Nbuf);
   fftw_plan pinv = fftw_plan_dft_c2r_1d(Nbuf, f_buf, conv_out, FFTW_ESTIMATE);
+
+  // TODO Use wisdom
 
   // Loop through number of buffers
   const int nv = Nbuf - Nfilt + 1;
@@ -93,10 +111,6 @@ int main(int argc, char **argv) {
     for (int m = 0; m < nv; m++) {
       full_out[m + strt + delay] = conv_out[m + dstrt] / Nbuf;
     }
-  }
-
-  for (int m = 0; m < delay; m++) {
-    full_out[m] = 0;
   }
 
   // Write outputs
