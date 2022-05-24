@@ -82,14 +82,7 @@ int main(int argc, char * argv[]) {
 
   fftwf_execute(p2d);
 
-  // // Write output
-  // for (size_t idx1 = 0; idx1 < dim1; idx1++) {
-  //   for (size_t idx2 = 0; idx2 < dim2; idx2++) {
-  //     /* printf("%f ", *(vec2d + idx1 * dim2 + idx2)); */
-  //     printf("(%f%+fj) ", creal(*(ovec2d + idx1 * dim2 + idx2)), cimag(*(ovec2d + idx1 * dim2 + idx2)));
-  //   }
-  //   printf("\n");
-  // }
+  // Write output
   printf("dim1: %d, dim2: %d\n", dim1, dim2);
   FILE* fout = fopen("twodout.bin", "wb");
   for (size_t idx1 = 0; idx1 < dim1; idx1++) {
