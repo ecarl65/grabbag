@@ -67,10 +67,9 @@ int main(int argc, char **argv) {
   // FFT plans
   double *buf = (double *) fftw_malloc(sizeof(double) * Nbuf);
   fftw_complex *f_buf = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nbuf);
-  fftw_complex *f_mult = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nbuf);
   fftw_plan psig = fftw_plan_dft_r2c_1d(Nbuf, buf, f_buf, FFTW_ESTIMATE);
   double *conv_out = (double *) fftw_malloc(sizeof(double) * Nbuf);
-  fftw_plan pinv = fftw_plan_dft_c2r_1d(Nbuf, f_mult, conv_out, FFTW_ESTIMATE);
+  fftw_plan pinv = fftw_plan_dft_c2r_1d(Nbuf, f_buf, conv_out, FFTW_ESTIMATE);
 
   // Loop through number of buffers
   const int nv = Nbuf - Nfilt + 1;
@@ -79,20 +78,16 @@ int main(int argc, char **argv) {
   const int delay = dstrt >> 1;
   printf("Doing %d loops\n", num_loops);
   for (int bn = 0; bn < num_loops; bn++) {
+    // Forward FFT
     int strt = bn * nv;
-    // Copy input to buffer
-    for (int m = 0; m < Nbuf; m++) {
-      buf[m] = full_in[strt + m];
-    }
-
-    // Compute FFT
-    fftw_execute(psig);
+    fftw_execute_dft_r2c(psig, &full_in[strt], f_buf);
 
     // Compute circular convolution
     for (int m = 0; m < Nbuf; m++) {
-      f_mult[m] = f_filt_out[m] * f_buf[m];
+      f_buf[m] *= f_filt_out[m];
     }
     fftw_execute(pinv);
+    /* fftw_execute_dft_c2r(pinv, f_buf, conv_out); */
 
     // Save only valid portion. Re-normalize inverse FFT.
     for (int m = 0; m < nv; m++) {
@@ -119,7 +114,6 @@ int main(int argc, char **argv) {
   fftw_free(f_filt_out);
   fftw_free(buf);
   fftw_free(f_buf);
-  fftw_free(f_mult);
   fftw_free(conv_out);
   fftw_destroy_plan(pfilt);
   fftw_destroy_plan(psig);
