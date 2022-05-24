@@ -24,15 +24,15 @@
 
 int main(int argc, char * argv[]) {
   // Declare variables
-  const int N = 1024;
+  const int N = 1024*1024;
   const float pi = acosf(-1);
   float * vec = (float *) fftwf_malloc(sizeof(float) * N);
   fftwf_complex * output = (fftwf_complex *) fftwf_malloc(sizeof(fftwf_complex) * N);
 
   // FFTW Plan
-  int wise = fftwf_import_wisdom_from_filename("rof1024");
+  int wise = fftwf_import_wisdom_from_filename("rof1024x1024");
   fftwf_plan p = fftwf_plan_dft_r2c_1d(N, vec, output, FFTW_EXHAUSTIVE);
-  int writ = fftwf_export_wisdom_to_filename("rof1024");
+  int writ = fftwf_export_wisdom_to_filename("rof1024x1024");
 
   // Populate input
   for (size_t idx = 0; idx < N; idx++) {
@@ -82,14 +82,20 @@ int main(int argc, char * argv[]) {
 
   fftwf_execute(p2d);
 
-  // Write output
+  // // Write output
+  // for (size_t idx1 = 0; idx1 < dim1; idx1++) {
+  //   for (size_t idx2 = 0; idx2 < dim2; idx2++) {
+  //     /* printf("%f ", *(vec2d + idx1 * dim2 + idx2)); */
+  //     printf("(%f%+fj) ", creal(*(ovec2d + idx1 * dim2 + idx2)), cimag(*(ovec2d + idx1 * dim2 + idx2)));
+  //   }
+  //   printf("\n");
+  // }
+  printf("dim1: %d, dim2: %d\n", dim1, dim2);
+  FILE* fout = fopen("twodout.bin", "wb");
   for (size_t idx1 = 0; idx1 < dim1; idx1++) {
-    for (size_t idx2 = 0; idx2 < dim2; idx2++) {
-      /* printf("%f ", *(vec2d + idx1 * dim2 + idx2)); */
-      printf("(%f%+fj) ", creal(*(ovec2d + idx1 * dim2 + idx2)), cimag(*(ovec2d + idx1 * dim2 + idx2)));
-    }
-    printf("\n");
+    fwrite(&ovec2d[idx1], sizeof(fftwf_complex), dim2, fout);
   }
+
 
   fftwf_free(vec2d);
   fftwf_free(ovec2d);
