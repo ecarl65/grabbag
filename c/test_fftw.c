@@ -85,10 +85,13 @@ int main(int argc, char * argv[]) {
   // Write output
   printf("dim1: %d, dim2: %d\n", dim1, dim2);
   FILE* fout = fopen("twodout.bin", "wb");
+  FILE* fin = fopen("twodin.bin", "wb");
   for (size_t idx1 = 0; idx1 < dim1; idx1++) {
+    fwrite(&vec2d[idx1], sizeof(fftwf_complex), dim2, fin);
     fwrite(&ovec2d[idx1], sizeof(fftwf_complex), dim2, fout);
   }
-
+  fclose(fin);
+  fclose(fout);
 
   fftwf_free(vec2d);
   fftwf_free(ovec2d);
