@@ -27,4 +27,6 @@ axs[2].set_xlabel("Time (s)")
 axs[2].set_ylabel("Amplitude")
 axs[2].legend()
 
+plt.tight_layout()
+
 plt.show()
