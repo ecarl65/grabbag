@@ -116,10 +116,13 @@ int main(int argc, char **argv) {
   // Write outputs
   FILE* dout = fopen("filtered.bin", "wb");
   fwrite(&full_out[0], sizeof(double), Nfull, dout);
+  fclose(dout);
   FILE *din = fopen("input.bin", "wb");
   fwrite(&full_in[0], sizeof(double), Nfull, din);
+  fclose(din);
   FILE *f_filt = fopen("filter.bin", "wb");
   fwrite(&filt[0], sizeof(double), Nfilt, f_filt);
+  fclose(f_filt);
 
   // Free memory
   fftw_free(full_in);
@@ -132,7 +135,7 @@ int main(int argc, char **argv) {
   fftw_destroy_plan(pfilt);
   fftw_destroy_plan(psig);
   fftw_destroy_plan(pinv);
-
+  fftw_cleanup();
 }
 
 

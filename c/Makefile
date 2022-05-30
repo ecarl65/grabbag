@@ -1,6 +1,6 @@
 
 CC=gcc
-CFLAGS=
+CFLAGS=-g
 LIBS=-lm -lfftw3f -lfftw3
 
 all: test_fftw osconv
