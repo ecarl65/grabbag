@@ -48,26 +48,28 @@ int main(int argc, char * argv[]) {
   // 2 Dimensional FFT down one dimension only
   const int dim1 = 32;
   const int dim2 = 1024;
+  const int half_dim2 = dim2 >> 1;
   const float fs = 500.0;
+  const float fc = 0.5f;
   float * vec2d = (float *) fftwf_malloc(sizeof(float) * dim1 * dim2);
+  printf("Freq Delta (starts at 0 Hz): %f Hz\n", fc);
   for (size_t idx1 = 0; idx1 < dim1; idx1++) {
-    float freq = idx1 * 0.5f / fs;
-    printf("Row: %d\tFreq: %f\n", idx1, freq * fs);
+    float freq = idx1 * fc / fs;
     for (size_t idx2 = 0; idx2 < dim2; idx2++) {
       vec2d[idx1 * dim2 + idx2] = cosf(2 * pi * freq * idx2);
     }
   }
-  fftwf_complex * ovec2d = (fftwf_complex *) fftwf_malloc(sizeof(fftwf_complex) * dim1 * dim2);
+  fftwf_complex * ovec2d = (fftwf_complex *) fftwf_malloc(sizeof(fftwf_complex) * dim1 * half_dim2);
 
   int n_size[] = {dim2};
   int rank = 1;
   int howmany = dim1;
   int idist = dim2;
-  int odist = dim2;
+  int odist = half_dim2;
   int istride = 1;
   int ostride = 1;
-  int *inembed = n_size;
-  int *onembed = n_size;
+  int *inembed = NULL;
+  int *onembed = NULL;
   fftwf_plan p2d = fftwf_plan_many_dft_r2c(rank, n_size, howmany, vec2d, inembed, istride, idist, ovec2d,
                                   onembed, ostride, odist, FFTW_MEASURE);
   int writ = fftwf_export_wisdom_to_filename("wisdom.txt");
@@ -80,7 +82,7 @@ int main(int argc, char * argv[]) {
   FILE* fin = fopen("twodin.bin", "wb");
   for (size_t idx1 = 0; idx1 < dim1; idx1++) {
     fwrite(&vec2d[idx1 * dim2], sizeof(float), dim2, fin);
-    fwrite(&ovec2d[idx1 * dim2], sizeof(fftwf_complex), dim2, fout);
+    fwrite(&ovec2d[idx1 * half_dim2], sizeof(fftwf_complex), half_dim2, fout);
   }
   fclose(fin);
   fclose(fout);
