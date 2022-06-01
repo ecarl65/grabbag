@@ -4,14 +4,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import signal
 
-indata = np.reshape(np.fromfile("twodin.bin", dtype=np.float32), (32, -1));
-outdata = np.reshape(np.fromfile("twodout.bin", dtype=np.complex64), (32, -1));
+indata = np.reshape(np.fromfile("twodin.bin", dtype=np.float32), (32, -1))
+outdata = np.reshape(np.fromfile("twodout.bin", dtype=np.complex64), (32, -1))
 
 fs = 500
 fig, axs = plt.subplots(3)
 im0 = axs[0].pcolormesh(indata)
 axs[0].set_title("Input Data")
-f = np.arange(outdata.shape[1]) / outdata.shape[1] * fs
+f = np.linspace(0, fs / 2, outdata.shape[1], endpoint=False)
 c = np.arange(outdata.shape[0])
 im1 = axs[1].pcolormesh(f, c, 20*np.log10(np.abs(outdata) + 1e-6), shading="nearest")
 

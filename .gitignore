@@ -12,4 +12,5 @@ nim/example
 parallel_hello_world
 target
 osconv
+dsconv
 test_fftw

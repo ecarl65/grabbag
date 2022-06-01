@@ -3,7 +3,7 @@ CC=gcc
 CFLAGS=-g
 LIBS=-lm -lfftw3f -lfftw3
 
-all: test_fftw osconv
+all: test_fftw osconv dsconv
 
 test_fftw: test_fftw.c
 	$(CC) -std=c99 -o $@ $< $(CFLAGS) $(LIBS)
@@ -11,8 +11,11 @@ test_fftw: test_fftw.c
 osconv: osconv.c
 	$(CC) -std=c99 -o $@ $< $(CFLAGS) $(LIBS)
 
+dsconv: dsconv.c
+	$(CC) -std=c99 -o $@ $< $(CFLAGS) $(LIBS)
+
 .phony: clean
 
 clean:
-	rm -f test_fftw osconv
+	rm -f test_fftw osconv dsconv
 
