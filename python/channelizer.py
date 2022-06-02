@@ -145,9 +145,6 @@ if __name__ == "__main__":
 
     v_sig = chann.channelize(sig)
 
-    # plot output
-    #  plt.plot(np.abs(v_sig.T))
-
     chan_max = v_sig.shape[0]
     time_max = v_sig.shape[1]
 
@@ -162,6 +159,7 @@ if __name__ == "__main__":
     axs[0].set_ylabel("Channel")
     axs[0].set_title("Channelizer Output Power")
 
+    axs[1].grid(True)
     d = v_sig[1:3, :]
     dd = np.angle(d[:, 1:] * np.conj(d[:, :-1]))
     axs[1].plot(time_series[:-2], dd.T)
