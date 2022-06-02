@@ -13,4 +13,5 @@ parallel_hello_world
 target
 osconv
 dsconv
+poly
 test_fftw
