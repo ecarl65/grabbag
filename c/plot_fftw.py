@@ -9,10 +9,12 @@ outdata = np.reshape(np.fromfile("twodout.bin", dtype=np.complex64), (32, -1))
 
 fs = 500
 fig, axs = plt.subplots(3)
+axs[0].grid(False)
 im0 = axs[0].pcolormesh(indata)
 axs[0].set_title("Input Data")
 f = np.linspace(0, fs / 2, outdata.shape[1], endpoint=False)
 c = np.arange(outdata.shape[0])
+axs[1].grid(False)
 im1 = axs[1].pcolormesh(f, c, 20*np.log10(np.abs(outdata) + 1e-6), shading="nearest")
 
 axs[1].set_title("Rows FFT Output")
