@@ -68,8 +68,8 @@ int main(int argc, char * argv[]) {
   int odist = half_dim2;
   int istride = 1;
   int ostride = 1;
-  int *inembed = NULL;
-  int *onembed = NULL;
+  int *inembed = n_size;
+  int *onembed = n_size;
   fftwf_plan p2d = fftwf_plan_many_dft_r2c(rank, n_size, howmany, vec2d, inembed, istride, idist, ovec2d,
                                   onembed, ostride, odist, FFTW_MEASURE);
   int writ = fftwf_export_wisdom_to_filename("wisdom.txt");
