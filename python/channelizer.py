@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""This is both a class and a test script for the Dave Sharpin version of the 2x 
+oversampled channelizer."""
 
 from copy import deepcopy
 import numpy as np
@@ -8,6 +10,8 @@ import matplotlib.pyplot as plt
 
 # {{{ class Channelizer
 class Channelizer:
+    """Class for the 2x oversampled channelizer structure in the Sharpin paper."""
+
     # {{{ __init__
     def __init__(self, sample_rate, decimation, overlap):
         self.sample_rate = sample_rate
@@ -21,6 +25,12 @@ class Channelizer:
         delta = self.sample_rate / self.decimation / 2
 
         self.freq_list = [np.arange(delta, self.sample_rate / 2, delta)]
+
+        self.proto_filt_len = None
+        self.proto_file = None
+        self.grp_delay = None
+        self.out_skip = None
+        self.delay_delta = None
 
     # }}}
 
@@ -42,18 +52,24 @@ class Channelizer:
                 ]
         )
         stop_ripple = 10 ** (self.stopband_rejection_db / 20)
-        ideal_size = 2 * self.decimation
-        filt_len = (-2 / 3 * np.log10(10 * pass_ripple * stop_ripple) * tmp_fs / delta_f) / ideal_size
-        self.proto_filt_len = int(np.ceil(filt_len) * ideal_size)
+        filt_len = (-2 / 3 * np.log10(10 * pass_ripple * stop_ripple) * tmp_fs / delta_f) / self.num_channels
+        ideal_len = int(np.ceil(filt_len) * self.num_channels)
+        self.proto_filt_len = int(np.floor(filt_len) * self.num_channels) + 1
+        assert self.proto_filt_len <= ideal_len, "Prototype filter ideal length should be less than total length"
 
         amps = [1, 0]
         ripple = [1 / pass_ripple, 1 / stop_ripple]
         band_edges = [0, pass_edge, stop_edge, tmp_fs / 2]
-        self.proto_filt = signal.remez(self.proto_filt_len, band_edges, amps, ripple, fs=tmp_fs)
+        self.proto_filt = np.zeros(ideal_len)
+        proto_filt = signal.remez(self.proto_filt_len, band_edges, amps, ripple, fs=tmp_fs)
+        self.proto_filt[:len(proto_filt)] = proto_filt
+        print(f"Prototype filter non-zero length: {self.proto_filt_len}, Padded length: {ideal_len}")
 
-        self.grp_delay = (self.proto_filt.size - 1) / (2 * tmp_fs)
+        #  self.grp_delay = (self.proto_filt.size - 1) / (2 * tmp_fs)
+        self.grp_delay = (self.proto_filt_len - 1) / (2 * tmp_fs)
         self.out_skip = np.ceil(self.grp_delay * tmp_fs / self.decimation).astype(int)
         self.delay_delta = self.out_skip / (tmp_fs / self.decimation) - self.grp_delay
+        print(f"Group delay: {self.grp_delay}, output samples: {self.grp_delay * tmp_fs / self.decimation}")
 
         e_cs = np.reshape(
                 self.proto_filt,
@@ -87,6 +103,7 @@ class Channelizer:
 
     # {{{ channelize
     def channelize(self, data):
+        """Perform the actual channelization step"""
 
         poly_data = self._prepare_data(data)
 
@@ -105,37 +122,6 @@ class Channelizer:
         return data_channelized[1 : self.decimation]
 
     # }}}
-
-    # {{{ channelize_chunks
-    def channelize_chunks(self, data, outfile):
-        """Break channelizer into chunks of data and write output to file"""
-
-        if len(data) < 4 * self.proto_filt_len:
-            outdata = self.channelize(data)
-            # TODO Write outdata to outfile all at once
-            return True
-
-        # Since returned above don't need "else", reduce branch depth
-        num_overlap_save = 4 * self.proto_filt_len
-        num_valid = num_overlap_save - self.proto_filt_len + 1 # XXX Verify +1
-        num_buffers = len(data) // num_valid
-
-        for buff in range(num_buffers):
-            strt = num_valid * buff
-            stp = strt + num_overlap_save
-
-            data_chunk = data[strt:stp]
-
-            chunk_out = self.channelize(data_chunk)
-
-            # Figure out what to save
-            # If it were just FFT stuff it'd be
-            # chunk_out[self.proto_filt_len - 1 : ]
-            # But I don't think that's right for the channelizer
-
-
-
-        # Iterate through chunks and do some overlap
 
 # }}}
 
@@ -165,15 +151,25 @@ if __name__ == "__main__":
     chan_max = v_sig.shape[0]
     time_max = v_sig.shape[1]
 
-    delta = opts.decimation / opts.sample_rate
-    time_series = np.arange(time_max + 1) * delta + delta / 2
+    out_per = opts.decimation / opts.sample_rate
+    time_series = np.arange(time_max + 1) * out_per + out_per / 2
     channs = np.arange(chan_max + 1) + 0.5
 
-    plt.pcolormesh(time_series, channs, np.abs(v_sig))
-    plt.xlabel("Time")
-    plt.ylabel("Channel")
-    plt.title("Channelizer Output Power")
+    fig, axs = plt.subplots(2)
+    axs[0].grid(False)
+    axs[0].pcolormesh(time_series, channs, np.abs(v_sig))
+    axs[0].set_xlabel("Time")
+    axs[0].set_ylabel("Channel")
+    axs[0].set_title("Channelizer Output Power")
 
+    d = v_sig[1:3, :]
+    dd = np.angle(d[:, 1:] * np.conj(d[:, :-1]))
+    axs[1].plot(time_series[:-2], dd.T)
+    axs[1].set_xlabel("Time")
+    axs[1].set_ylabel("Channel")
+    axs[1].set_title("Two Channels Phase DCM")
+
+    plt.tight_layout()
     plt.show()
 
 # }}}
