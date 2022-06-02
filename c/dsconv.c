@@ -94,6 +94,9 @@ int main(int argc, char **argv) {
   const int dstrt = Nfilt - 1;
   const int num_loops = Nfull / nv;
   const int delay = dstrt >> 1;
+  const int ds = 4;
+  const int Nds = Nfull / ds;
+  double *ds_out = fftw_malloc(sizeof(double) * Nds);
   printf("Doing %d loops\n", num_loops);
   for (int bn = 0; bn < num_loops; bn++) {
     // Forward FFT
@@ -109,17 +112,18 @@ int main(int argc, char **argv) {
 
     // Save only valid portion. Re-normalize inverse FFT.
     for (int m = 0; m < nv; m++) {
-      full_out[m + strt + delay] = conv_out[m + dstrt] / Nbuf;
+      int outidx = m + strt + delay;
+      full_out[outidx] = conv_out[m + dstrt] / Nbuf;
+      if (outidx % ds == 0) {
+        ds_out[outidx / ds] = full_out[outidx];
+      }
     }
   }
 
   // Perform downsampling
-  const int ds = 4;
-  const int Nds = Nfull / ds;
-  double *ds_out = fftw_malloc(sizeof(double) * Nds);
   for (int m = 0; m < Nfull; m++) {
     if (m % ds == 0) {
-      ds_out[m/ds] = full_out[m];
+      /* ds_out[m/ds] = full_out[m]; */
     }
   }
 
