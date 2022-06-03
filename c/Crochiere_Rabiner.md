@@ -68,4 +68,8 @@ $$ \bar{p}_{\rho} ( m ) = h ( m M - \rho ), \quad \rho = 0, 1, \ldots, K-1 $$
 
 Do you see it? The difference is that the $\rho$ extends to $K-1$ but the downsampling is based on half of that, $M$. This leads to a similar structure as the Sharpin one in which half the channels are repeats of the filter taps of the others but with an extra delay. But it _doesn't_ have the upsampling in the filter structure.
 
+The data into each channel is defined in a more traditional commutator sense, without the repitition the filter has, as
+
+$$ x_{\rho} ( r ) = x ( r K + \rho), \quad \rho = 0, 1, \ldots, K-1 $$
+
 The other main difference is that *after* the commutator but *before* the polyphase filters there is an upsample by $I = 2$ step. I *think* this can maybe be handled by modifying the `ostride` value in FFTW. Which would make it super convenient to not have to do any extra data copies. 
