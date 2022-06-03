@@ -15,6 +15,7 @@
  *
  * =====================================================================================
  */
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <complex.h>
@@ -22,12 +23,22 @@
 #include <fftw3.h>
 #include <stdint.h>
 
+double coarse_gaussian() {
+  double out = 0;
+  for (int m = 0; m < 12; m++) {
+    out += (double) (rand() % 100);
+  }
+  out /= 100.0;
+  out -= 6.0;
+}
+
 int main(int argc, char * argv[]) {
   // Declare variables
   const int N = 1024*1024;
+  const int Nh = N / 2 + 1;
   const float pi = acosf(-1);
   float * vec = (float *) fftwf_malloc(sizeof(float) * N);
-  fftwf_complex * output = (fftwf_complex *) fftwf_malloc(sizeof(fftwf_complex) * N);
+  fftwf_complex * output = (fftwf_complex *) fftwf_malloc(sizeof(fftwf_complex) * Nh);
 
   // FFTW Plan
   int wise = fftwf_import_wisdom_from_filename("wisdom.txt");
@@ -35,11 +46,15 @@ int main(int argc, char * argv[]) {
 
   // Populate input
   for (size_t idx = 0; idx < N; idx++) {
-    vec[idx] = cosf(2 * pi * 0.05 * idx);
+    vec[idx] = cosf(2 * pi * 0.05 * idx) + coarse_gaussian() / 10.0;
   }
 
   // Execute plan
   fftwf_execute(p); 
+
+  FILE* f1d = fopen("oned.bin", "wb");
+  fwrite(&output[0], sizeof(fftwf_complex), Nh, f1d);
+  fclose(f1d);
 
   // Free memory
   fftwf_free(output);
@@ -48,7 +63,8 @@ int main(int argc, char * argv[]) {
   // 2 Dimensional FFT down one dimension only
   const int dim1 = 32;
   const int dim2 = 1024;
-  const int half_dim2 = dim2 >> 1;
+  /* const int half_dim2 = dim2 >> 1; */
+  const int half_dim2 = dim2 / 2 + 1;
   const float fs = 500.0;
   const float fc = 0.5f;
   float * vec2d = (float *) fftwf_malloc(sizeof(float) * dim1 * dim2);

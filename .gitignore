@@ -4,6 +4,7 @@ cython/cython-dsp
 *.png
 *.ppm
 *.bin
+wisdom.txt
 add
 add_cuda
 add_cuda1
