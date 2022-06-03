@@ -47,6 +47,6 @@ More important is getting the right filter length. The procedure might be:
 2. Find integer $L$ for nearest (next highest? Lowest?) result of $2 M L + 1$ to $N_H$
 3. $$ N_H = round \left( \frac{N_H - 1}{2 M} \right) 2 M + 1 $$
 4. Find the poly filter matrix decomposition length.
-$$ \left( \lceil \frac{N_H - 1}{M} \rceil + 1 \right) M $$
+$$ \left( \left\lceil \frac{N_H - 1}{M} \right\rceil + 1 \right) M $$
 
 
