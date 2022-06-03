@@ -1,6 +1,6 @@
 # Clockwise Commutator
 
-To deconstruct the legs in a clockwise commutator model that starts at 0 and goes down, with $M$ being the number 
+To deconstruct the legs in a clockwise commutator model that starts at the first row being 0 and goes down, with $M$ being the number 
 of polyphase legs and downsample factor and overbar indicating the clockwise model.
 
 $$ \bar{p}_{\rho} \left( n \right) = h \left( n M - \rho \right) $$
@@ -49,4 +49,23 @@ More important is getting the right filter length. The procedure might be:
 4. Find the poly filter matrix decomposition length.
 $$ \left( \left\lceil \frac{N_H - 1}{M} \right\rceil + 1 \right) M $$
 
+# Channelizer
 
+The Crochiere and Rabiner critically sampled channelizer is a little different from the Sharpin version. This will detail some of the differences.
+
+1. It's a clockwise commutator model.
+2. It uses the DFT down the channels instead of the IDFT.
+3. The filters are defined as $ \bar{p}_{\rho} ( m ) = h ( m M - \rho ) $
+4. The branch input signals are defined as $ x_\rho (m ) = x ( m M + \rho ), \quad \rho = 0, 1, \ldots, M-1 $
+
+# Oversampled Channelizer
+
+For the oversampled version it's even more different. Let's use the case in which $ K = M I $, where $M$ is the downsampling amount now and $K$ is the number of channels. We're interested in $I = 2$, so a 2x oversampled channelizer. This is about right for making the stopband of the filter hit by the time we get to aliasing on the output. 
+
+Now the filters are defined with a _subtle_ difference:
+
+$$ \bar{p}_{\rho} ( m ) = h ( m M - \rho ), \quad \rho = 0, 1, \ldots, K-1 $$
+
+Do you see it? The difference is that the $\rho$ extends to $K-1$ but the downsampling is based on half of that, $M$. This leads to a similar structure as the Sharpin one in which half the channels are repeats of the filter taps of the others but with an extra delay. But it _doesn't_ have the upsampling in the filter structure.
+
+The other main difference is that *after* the commutator but *before* the polyphase filters there is an upsample by $I = 2$ step. I *think* this can maybe be handled by modifying the `ostride` value in FFTW. Which would make it super convenient to not have to do any extra data copies. 
