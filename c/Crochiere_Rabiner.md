@@ -21,3 +21,18 @@ H_{poly} = \left[
 \right]
 $$
 
+The data polyphase decomposition has advances and doesn't "seem" realizable in a block diagram sense. Luckily we're
+doing this on a computer with buffers so it should work just fine.
+
+$$
+X_{poly} = \left[
+\begin{matrix}
+0 & M & 2M & \cdots \\
+1 & M+1 & 2M+1 & \cdots \\
+2 & M+2 & 2M+2 & \cdots \\
+\vdots & \vdots & \vdots & \cdots \\
+M-1 & 2M-1 & 3M-1 & \cdots \\
+\end{matrix}
+\right]
+$$
+
