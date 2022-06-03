@@ -36,3 +36,17 @@ M-1 & 2M-1 & 3M-1 & \cdots \\
 \right]
 $$
 
+# Procedure
+
+This would seem to indicate that the amount of data should be some integer multiple of $M$ plus 1. When chunking up
+the input this is important to keep in mind.
+
+More important is getting the right filter length. The procedure might be:
+
+1. Estimate the filter size for the requirements. Call it $N_H$
+2. Find integer $L$ for nearest (next highest? Lowest?) result of $2 M L + 1$ to $N_H$
+3. $$ N_H = round \left( \frac{N_H - 1}{2 M} \right) 2 M + 1 $$
+4. Find the poly filter matrix decomposition length.
+$$ \left( \lceil \frac{N_H - 1}{M} \rceil + 1 \right) M $$
+
+
