@@ -73,3 +73,24 @@ The data into each channel is defined in a more traditional commutator sense, wi
 $$ x_{\rho} ( r ) = x ( r K + \rho), \quad \rho = 0, 1, \ldots, K-1 $$
 
 The other main difference is that *after* the commutator but *before* the polyphase filters there is an upsample by $I = 2$ step. I *think* this can maybe be handled by modifying the `ostride` value in FFTW. Which would make it super convenient to not have to do any extra data copies. 
+
+# Input Signal
+
+The python input can just import `chirp` from `scipy.signal`. But we have to make our own for the C version. It's the ideal signal. Pulling from [this](https://en.wikipedia.org/wiki/Chirp) wikipedia page, the instantaneous frequency of a chirp is:
+
+$$f(t)=ct+f_{0}$$
+
+where $f_0$ is the starting frequency at time 0 and $c$ is the chirp rate, assumed to be:
+
+$$ c = \frac{f_1 - f_0}{T}$$
+
+Where $f_1$ is the final frequency and $T$ is the time it takes to sweep from $f_0$ to $f_1$.
+
+Integrating that frequency and putting it as the phase of a sinusoid gives us
+
+$$x(t)=\sin \left[\phi_0 + 2 \pi \left( \frac{c}{2} t^2 + f_0 t \right)\right]$$
+
+We'll probably just assuming the starting phase is zero. If we also discretize the equation with $t = n T_s$ or $t = n / F_s$ then we end up with:
+
+$$x(t)=\sin \left[2 \pi \left( \frac{c T_s^2}{2} n^2 + f_0 n T_s \right)\right]$$
+
