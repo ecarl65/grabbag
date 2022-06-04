@@ -5,7 +5,7 @@ of polyphase legs and downsample factor and overbar indicating the clockwise mod
 
 $$ \bar{p}_{\rho} \left( n \right) = h \left( n M - \rho \right) $$
 
-$$ \bar{x}_{\rho} \left( n \right) = x \left( n M - \rho \right) $$
+$$ \bar{x}_{\rho} \left( n \right) = x \left( n M + \rho \right) $$
 
 So the matrices would look like the below (if the top row is $\rho = 0$ and it proceeds down from there to 1, 2, 3, ...)
 
