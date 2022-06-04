@@ -41,12 +41,16 @@ int main(int argc, char **argv) {
   const double pi = acosf(-1);
   const double Fs = 10e3;
   const double Ts = 1.0 / Fs;
-  const double fc = 100;
-  const double ff = 2 * fc;
+  const double Tfull = Nfull * Ts;
+  const double f0 = 25;
+  const double f1 = 125;
+  const double ff = 2 * f1;
+  const double chirp_rate = (f1 - f0) / Tfull;
   double *full_in = (double *) fftw_malloc(sizeof(double) * Nfull);
   srand(time(NULL));
   for (int m = 0; m < Nfull; m++) {
-    full_in[m] = cos(2 * pi * fc * m * Ts) + coarse_gaussian() / 10.0;
+    /* full_in[m] = cos(2 * pi * f0 * m * Ts) + coarse_gaussian() / 10.0; */
+    full_in[m] = sin(2 * pi * (chirp_rate * pow(Ts * m, 2) / 2 + f0 * m * Ts)) + coarse_gaussian() / 10.0;
   }
   double *full_out = fftw_malloc(sizeof(double) * Nfull);
   memset(&full_out[0], 0, sizeof(full_out[0]) * Nfull);

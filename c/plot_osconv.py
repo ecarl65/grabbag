@@ -16,7 +16,7 @@ tin = np.arange(len(indata)) / fs
 tout = np.arange(len(outdata)) / fs
 w, h = signal.freqz(filt, 1, fs=10e3)
 axs[1].plot(w, 20*np.log10(np.abs(h)))
-axs[1].plot([100, 100], [-60, 0], "r:")
+axs[1].plot([125, 125], [-60, 0], "r:")
 axs[1].set_title("Filter Frequency Response")
 axs[1].set_xlabel("Frequency (Hz)")
 axs[1].set_ylabel("Magnitude (dB)")
