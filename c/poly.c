@@ -38,8 +38,9 @@ int main(int argc, char **argv) {
   const int M = 4; // Downsample factor
   const int Nfull = 128 * M;  // Total number of samples
   const int Nds = Nfull / M;
-  const int Nfilt = 16 * M + 1;
+  const int Nfilt = 8 * M + 1;
   const int Nfilt_half = (Nfilt - 1) >> 1;
+  const int Nfill = Nfull - Nfilt + 1;
   const double pi = acosf(-1);
   const double Fs = 10e3;
   const double Ts = 1.0 / Fs;
@@ -56,7 +57,6 @@ int main(int argc, char **argv) {
   double filt[Nfilt];
   double *filt_full = (double *) fftw_malloc(sizeof(double) * Nfull);
   double *ds_out = fftw_malloc(sizeof(double) * Nds);
-  double *full_out = fftw_malloc(sizeof(double) * Nfull);
   fftw_complex *fft_in = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nfft);
   fftw_complex *fft_filt = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nfft);
   double *conv_out = (double *) fftw_malloc(sizeof(double) * Nfull);
@@ -81,12 +81,12 @@ int main(int argc, char **argv) {
 
   // Make input sinusoid
   for (int m = 0; m < Nfull; m++) {
-    full_in[m] = cos(2 * pi * fc * m * Ts) + coarse_gaussian() / 10.0;
+    if (m < Nfill) {
+      full_in[m] = cos(2 * pi * fc * m * Ts) + coarse_gaussian() / 10.0;
+    } else {
+      full_in[m] = 0;
+    }
   }
-
-  // output
-  for (size_t m = 0; m < Nfull; m++) full_out[m] = 0;
-  for (size_t m = 0; m < Nds; m++) ds_out[m] = 0;
 
   // Filter polyphase decomposition
   for (int n = 0; n < ncols; n++) {
@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
   fftw_execute(pfilt);
   
   // IFFT plan
-  n_size[0] = ncols_fft;
+  n_size[0] = ncols;
   rank = 1;
   howmany = M;
   idist = ncols_fft;
@@ -152,15 +152,16 @@ int main(int argc, char **argv) {
   fftw_execute(pinv);
 
   // Perform summation and get downsampled output. Also normalize inverse fft.
+  for (size_t m = 0; m < Nds; m++) ds_out[m] = 0;
   for (int m = 0; m < Nds; m++) {
     for (int rho = 0; rho < M; rho++) {
-      ds_out[m] += full_out[m + rho * Nds] / Nfull;
+      ds_out[m] += conv_out[m + rho * Nds] / Nfull * M;
     }
   }
 
   // Write outputs
   FILE* dout = fopen("filtered.bin", "wb");
-  fwrite(&full_out[0], sizeof(double), Nfull, dout);
+  fwrite(&conv_out[0], sizeof(double), Nfull, dout);
   fclose(dout);
   FILE *din = fopen("input.bin", "wb");
   fwrite(&full_in[0], sizeof(double), Nfull, din);
@@ -182,7 +183,6 @@ int main(int argc, char **argv) {
   fftw_free(full_in);
   fftw_free(filt_full);
   fftw_free(ds_out);
-  fftw_free(full_out);
   fftw_free(fft_in);
   fftw_free(fft_filt);
   fftw_free(conv_out);

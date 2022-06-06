@@ -27,8 +27,8 @@ axs[1, 0].set_title("Filter Frequency Response")
 axs[1, 0].set_xlabel("Frequency (Hz)")
 axs[1, 0].set_ylabel("Magnitude (dB)")
 axs[0, 1].plot(tin, indata, label="Input")
-axs[0, 1].plot(tout, outdata, "r", label="O/S Filtered");
-axs[0, 1].plot(tdsout, dsdata, "g.", label="Downsampled");
+#  axs[0, 1].plot(tout, outdata, "r", label="O/S Filtered");
+axs[0, 1].plot(tdsout, dsdata, "g.-", label="Downsampled");
 axs[0, 1].set_title("Input & Output")
 axs[0, 1].set_xlabel("Time (s)")
 axs[0, 1].set_ylabel("Amplitude")
