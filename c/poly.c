@@ -36,10 +36,11 @@ double coarse_gaussian() {
 int main(int argc, char **argv) {
   // Variables
   const int M = 4; // Downsample factor
-  const int Nfull = 128 * M;  // Total number of samples
+  const int Nfull = 256 * M;  // Total number of samples
   const int Nds = Nfull / M;
   const int Nfilt = 8 * M + 1;
   const int Nfilt_half = (Nfilt - 1) >> 1;
+  const int Noutdelay = Nfilt_half / M;
   const int Nfill = Nfull - Nfilt + 1;
   const double pi = acosf(-1);
   const double Fs = 10e3;
@@ -130,7 +131,7 @@ int main(int argc, char **argv) {
   fftw_execute(pfilt);
   
   // IFFT plan
-  n_size[0] = ncols;
+  n_size[0] = ncols;  // LOGICAL size, not PHYSICAL size of output array
   rank = 1;
   howmany = M;
   idist = ncols_fft;
@@ -153,9 +154,9 @@ int main(int argc, char **argv) {
 
   // Perform summation and get downsampled output. Also normalize inverse fft.
   for (size_t m = 0; m < Nds; m++) ds_out[m] = 0;
-  for (int m = 0; m < Nds; m++) {
+  for (int m = 0; m < Nds - Noutdelay; m++) {
     for (int rho = 0; rho < M; rho++) {
-      ds_out[m] += conv_out[m + rho * Nds] / Nfull * M;
+      ds_out[m] += conv_out[m + rho * Nds + Noutdelay] / Nfull * M;
     }
   }
 
