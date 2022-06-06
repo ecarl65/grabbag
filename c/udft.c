@@ -24,6 +24,12 @@
 #include <tgmath.h>
 #include <string.h>
 
+void write_out(char *file, void *addr, size_t size, size_t numels) {
+  FILE* fout = fopen(file, "wb");
+  fwrite(addr, size, numels, fout);
+  fclose(fout);
+}
+
 double coarse_gaussian() {
   double out = 0;
   for (int m = 0; m < 12; m++) {
@@ -170,26 +176,13 @@ int main(int argc, char **argv) {
                                              onembed, ostride, odist, FFTW_ESTIMATE);
   fftw_execute(pudft);
 
-
   // Write outputs
-  FILE* dout = fopen("filtered.bin", "wb");
-  fwrite(&conv_out[0], sizeof(double), Nfull, dout);
-  fclose(dout);
-  FILE *din = fopen("input.bin", "wb");
-  fwrite(&full_in[0], sizeof(double), Nfull, din);
-  fclose(din);
-  FILE *f_filt = fopen("filter.bin", "wb");
-  fwrite(&filt[0], sizeof(double), Nfilt, f_filt);
-  fclose(f_filt);
-  FILE* duout = fopen("channelized.bin", "wb");
-  fwrite(&udft[0], sizeof(fftw_complex), Nfft_v, duout);
-  fclose(duout);
-  FILE* ddata = fopen("fftdata.bin", "wb");
-  fwrite(&fft_in[0], sizeof(fftw_complex), Nfft_h, ddata);
-  fclose(ddata);
-  FILE* dfilt = fopen("fftfilt.bin", "wb");
-  fwrite(&fft_filt[0], sizeof(fftw_complex), Nfft_h, dfilt);
-  fclose(dfilt);
+  write_out("filtered.bin", (void *) &conv_out[0], sizeof(double), Nfull);
+  write_out("input.bin", (void *) &full_in[0], sizeof(double), Nfull);
+  write_out("filter.bin", (void *) &filt[0], sizeof(double), Nfilt);
+  write_out("channelized.bin", (void *) &udft[0], sizeof(fftw_complex), Nfft_v);
+  write_out("fftdata.bin", (void *) &fft_in[0], sizeof(fftw_complex), Nfft_h);
+  write_out("fftfilt.bin", (void *) &fft_filt[0], sizeof(fftw_complex), Nfft_h);
 
   // Free memory
   fftw_free(full_in);
