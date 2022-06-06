@@ -35,7 +35,7 @@ double coarse_gaussian() {
 
 int main(int argc, char **argv) {
   // Variables
-  const int M = 4; // Downsample factor
+  const int M = 8; // Downsample factor
   const int Nfull = 256 * M;  // Total number of samples
   const int Nds = Nfull / M;
   const int Nfilt = 16 * M + 1;
@@ -51,18 +51,20 @@ int main(int argc, char **argv) {
   const int nrows = M;
   const int ncols = Nds;
   const int ncols_fft = ((Nfull / M) / 2 + 1);
-  const int Nfft = ncols_fft * M;
+  const int nrows_fft = M / 2 + 1;
+  const int Nfft_h = ncols_fft * M;
+  const int Nfft_v = nrows_fft * ncols;
   srand(time(NULL));
 
   // Arrays
   double *full_in = (double *) fftw_malloc(sizeof(double) * Nfull);
   double filt[Nfilt];
   double *filt_full = (double *) fftw_malloc(sizeof(double) * Nfull);
-  fftw_complex *fft_in = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nfft);
-  fftw_complex *fft_filt = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nfft);
+  fftw_complex *fft_in = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nfft_h);
+  fftw_complex *fft_filt = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nfft_h);
   double *conv_out = (double *) fftw_malloc(sizeof(double) * Nfull);
-  fftw_complex *fft_mult = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nfft);
-  fftw_complex *udft = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nfull);
+  fftw_complex *fft_mult = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nfft_h);
+  fftw_complex *udft = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nfft_v);
 
   // Make filter
   int outidx = 0;
@@ -149,7 +151,7 @@ int main(int argc, char **argv) {
   fftw_execute(psig);
 
   // Compute circular convolution
-  for (int m = 0; m < Nfft; m++) {
+  for (int m = 0; m < Nfft_h; m++) {
     fft_mult[m] = fft_filt[m] * fft_in[m];
   }
   fftw_execute(pinv);
@@ -180,13 +182,13 @@ int main(int argc, char **argv) {
   fwrite(&filt[0], sizeof(double), Nfilt, f_filt);
   fclose(f_filt);
   FILE* duout = fopen("channelized.bin", "wb");
-  fwrite(&udft[0], sizeof(fftw_complex), Nfull, duout);
+  fwrite(&udft[0], sizeof(fftw_complex), Nfft_v, duout);
   fclose(duout);
   FILE* ddata = fopen("fftdata.bin", "wb");
-  fwrite(&fft_in[0], sizeof(fftw_complex), Nfft, ddata);
+  fwrite(&fft_in[0], sizeof(fftw_complex), Nfft_h, ddata);
   fclose(ddata);
   FILE* dfilt = fopen("fftfilt.bin", "wb");
-  fwrite(&fft_filt[0], sizeof(fftw_complex), Nfft, dfilt);
+  fwrite(&fft_filt[0], sizeof(fftw_complex), Nfft_h, dfilt);
   fclose(dfilt);
 
   // Free memory

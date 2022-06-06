@@ -4,11 +4,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import signal
 
-M = 4
+M = 8
+Mh = int(M / 2) + 1
 
 indata = np.fromfile("input.bin", dtype=np.float64)
 outdata = np.fromfile("filtered.bin", dtype=np.float64)
-channelized = np.reshape(np.fromfile("channelized.bin", dtype=np.complex128), (M, -1))
+channelized = np.reshape(np.fromfile("channelized.bin", dtype=np.complex128), (Mh, -1))
 filt = np.fromfile("filter.bin", dtype=np.float64)
 fdata = np.reshape(np.fromfile("fftdata.bin", dtype=np.complex128), (M, -1))
 ffilt = np.reshape(np.fromfile("fftfilt.bin", dtype=np.complex128), (M, -1))
@@ -51,8 +52,9 @@ axs[2, 0].set_title("Channelized Output")
 axs[2, 0].set_ylabel("Channel")
 axs[2, 0].set_xlabel("Time Sample")
 
-f, t, p = signal.stft(indata, fs=10e3, nperseg=8)
+f, t, p = signal.stft(indata, fs=10e3, nperseg=M)
 axs[1, 1].pcolormesh(t, f, np.abs(p))
+axs[1, 1].set_title("STFT from SciPy")
 axs[1, 1].set_xlabel("Time")
 axs[1, 1].set_ylabel("Frequency")
 
