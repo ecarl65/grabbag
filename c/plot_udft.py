@@ -14,10 +14,14 @@ filt = np.fromfile("filter.bin", dtype=np.float64)
 fdata = np.reshape(np.fromfile("fftdata.bin", dtype=np.complex128), (M, -1))
 ffilt = np.reshape(np.fromfile("fftfilt.bin", dtype=np.complex128), (M, -1))
 
+Nfilt = len(filt)
+Noutdelay = int((Nfilt - 1) / (2 * M))
+
 fs = 10e3
 fig, axs = plt.subplots(3, 2)
 axs[0, 0].plot(filt)
 axs[0, 0].set_title("Filter Taps")
+
 tin = np.arange(len(indata)) / fs
 tout = np.arange(len(outdata)) / fs
 w, h = signal.freqz(filt, 1, fs=10e3)
@@ -27,33 +31,34 @@ axs[1, 0].set_title("Filter Frequency Response")
 axs[1, 0].set_xlabel("Frequency (Hz)")
 axs[1, 0].set_ylabel("Magnitude (dB)")
 
-pchan = 1
+pchan = 0
 tds = np.arange(channelized.shape[1]) / fs * M
 axs[0, 1].plot(tin, indata, label="Input", color="dimgray", alpha=0.3)
-axs[0, 1].plot(tds, np.real(channelized[pchan, :]) / channelized.shape[1], label=f"Channel {pchan} (real)")
-axs[0, 1].plot(tds, np.imag(channelized[pchan, :]) / channelized.shape[1], label=f"Channel {pchan} (imag)")
-axs[0, 1].set_title("Input & Output")
+axs[0, 1].plot(tds[:(len(tds) - Noutdelay)], np.real(channelized[0, Noutdelay:].T) / channelized.shape[1], label=f"Channel 0 (real)")
+axs[0, 1].plot(tds[:(len(tds) - Noutdelay)], np.abs(channelized[1:-1, Noutdelay:].T) / channelized.shape[1] * 2, label="Other Channels (mag)")
+axs[0, 1].plot(tds[:(len(tds) - Noutdelay)], np.real(channelized[-1, Noutdelay:].T) / channelized.shape[1], label=f"Channel {M >> 1} (real)")
+axs[0, 1].set_title("Input & Output (Normalized)")
 axs[0, 1].set_xlabel("Time (s)")
 axs[0, 1].set_ylabel("Amplitude")
 axs[0, 1].legend()
 
-#  axs[1, 1].pcolormesh(np.abs(ffilt))
-#  axs[1, 1].set_title("Filter Decomposition")
-#  axs[1, 1].set_xlabel("Frequency Index")
-#  axs[1, 1].set_ylabel("Polyphase Channel")
-
-axs[2, 1].pcolormesh(np.abs(fdata))
+f = np.linspace(0, fs / 2, fdata.shape[1], endpoint=False)
+c = np.arange(fdata.shape[0])
+axs[2, 1].pcolormesh(f, c, np.abs(fdata), shading="auto")
 axs[2, 1].set_title("FFT of Polyphase Data")
-axs[2, 1].set_xlabel("Frequency Index")
+axs[2, 1].set_xlabel("Frequency (Hz)")
 axs[2, 1].set_ylabel("Polyphase Channel")
 
-axs[2, 0].pcolormesh(np.abs(channelized))
+ch_nd = channelized[:, Noutdelay:]
+c = np.arange(ch_nd.shape[0])
+t = np.arange(ch_nd.shape[1]) / fs * M
+axs[2, 0].pcolormesh(t, c, np.abs(ch_nd), shading="auto")
 axs[2, 0].set_title("Channelized Output")
 axs[2, 0].set_ylabel("Channel")
 axs[2, 0].set_xlabel("Time Sample")
 
 f, t, p = signal.stft(indata, fs=10e3, nperseg=M)
-axs[1, 1].pcolormesh(t, f, np.abs(p))
+axs[1, 1].pcolor(t, f, np.abs(p), shading="auto")
 axs[1, 1].set_title("STFT from SciPy")
 axs[1, 1].set_xlabel("Time")
 axs[1, 1].set_ylabel("Frequency")
