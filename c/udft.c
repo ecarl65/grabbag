@@ -75,14 +75,10 @@ int main(int argc, char **argv) {
   }
   for (int m = 0; m < Nfilt; m++) filt[m] /= filt_sum;  // Normalize the filter
 
-  // Make input sinusoid
+  // Make input chirp
   for (int m = 0; m < Nfull; m++) {
-    if (m < Nfill) {
-      /* full_in[m] = cos(2 * pi * fc * m * Ts) + coarse_gaussian() / 10.0; */
-      full_in[m] = sin(2 * pi * (2 * Fs / Tfull * pow(Ts * m, 2) / 2)) + coarse_gaussian() / 10.0;
-    } else {
-      full_in[m] = 0;
-    }
+    /* full_in[m] = cos(2 * pi * fc * m * Ts) + coarse_gaussian() / 10.0; */
+    full_in[m] = sin(2 * pi * (2 * Fs / Tfull * pow(Ts * m, 2) / 2)) + coarse_gaussian() / 10.0;
   }
 
   // Filter polyphase decomposition
