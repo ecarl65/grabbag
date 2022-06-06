@@ -22,15 +22,7 @@
 #include <tgmath.h>
 #include <fftw3.h>
 #include <stdint.h>
-
-double coarse_gaussian() {
-  double out = 0;
-  for (int m = 0; m < 12; m++) {
-    out += (double) (rand() % 100);
-  }
-  out /= 100.0;
-  out -= 6.0;
-}
+#include "utils.h"
 
 int main(int argc, char * argv[]) {
   // Declare variables
@@ -94,15 +86,10 @@ int main(int argc, char * argv[]) {
 
   // Write output
   printf("dim1: %d, dim2: %d\n", dim1, dim2);
-  FILE* fout = fopen("twodout.bin", "wb");
-  FILE* fin = fopen("twodin.bin", "wb");
-  for (size_t idx1 = 0; idx1 < dim1; idx1++) {
-    fwrite(&vec2d[idx1 * dim2], sizeof(float), dim2, fin);
-    fwrite(&ovec2d[idx1 * half_dim2], sizeof(fftwf_complex), half_dim2, fout);
-  }
-  fclose(fin);
-  fclose(fout);
+  write_out("twodin.bin", (void *) &vec2d[0], sizeof(float), dim2 * dim1);
+  write_out("twodout.bin", (void *) &ovec2d[0], sizeof(fftwf_complex), half_dim2 * dim1);
 
+  // Free memory
   fftwf_free(vec2d);
   fftwf_free(ovec2d);
 
