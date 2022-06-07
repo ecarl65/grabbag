@@ -94,6 +94,7 @@ int main(int argc, char **argv) {
 
   // Forward FFT of this buffer of data
   fftw_execute(psig);
+  // fftw_execute_dft_r2c(psig, &full_in[idx], fft_in);
 
   // Compute circular convolution through multiplying in frequency domain.
   for (int m = 0; m < Nfft_h; m++) fft_mult[m] = fft_filt[m] * fft_in[m];
@@ -106,6 +107,8 @@ int main(int argc, char **argv) {
                                            col_c.inembed, col_c.istride, col_c.idist, udft,
                                            col_c.onembed, col_c.ostride, col_c.odist, FFTW_ESTIMATE);
   fftw_execute(pudft);
+
+  // TODO Copy udft to output, or append to output file
 
   // End loop
 
