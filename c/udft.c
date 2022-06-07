@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
 
   // Arrays
   double *full_in = (double *) fftw_malloc(sizeof(double) * Nfull);
-  double filt[Nfilt];
+  double filt[Nfilt];  // Short, non-zero taps only, just leave on the stack. Will copy to below before FFT.
   double *filt_full = (double *) fftw_malloc(sizeof(double) * Nfull);
   fftw_complex *fft_in = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nfft_h);
   fftw_complex *fft_filt = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nfft_h);
@@ -85,23 +85,23 @@ int main(int argc, char **argv) {
                                            filt_c.onembed, filt_c.ostride, filt_c.odist, FFTW_ESTIMATE);
   fftw_execute(pfilt);
   
-  // IFFT plan
+  // IFFT plan for convolution
   fftw_plan pinv = fftw_plan_many_dft_c2r(inv_c.rank, inv_c.n_size, inv_c.howmany, fft_mult,
                                           inv_c.inembed, inv_c.istride, inv_c.idist, conv_out,
                                           inv_c.onembed, inv_c.ostride, inv_c.odist, FFTW_ESTIMATE);
 
   // TODO: this section will be in the loop
 
-  // Forward FFT
+  // Forward FFT of this buffer of data
   fftw_execute(psig);
 
-  // Compute circular convolution
-  for (int m = 0; m < Nfft_h; m++) {
-    fft_mult[m] = fft_filt[m] * fft_in[m];
-  }
+  // Compute circular convolution through multiplying in frequency domain.
+  for (int m = 0; m < Nfft_h; m++) fft_mult[m] = fft_filt[m] * fft_in[m];
+
+  // Perform inverse FFT to get real data out of convolution
   fftw_execute(pinv);
 
-  // Perform DFT down columns to get channelized output
+  // Perform FFT down columns to get channelized output. Output may be transposed.
   fftw_plan pudft = fftw_plan_many_dft_r2c(col_c.rank, col_c.n_size, col_c.howmany, conv_out,
                                            col_c.inembed, col_c.istride, col_c.idist, udft,
                                            col_c.onembed, col_c.ostride, col_c.odist, FFTW_ESTIMATE);
