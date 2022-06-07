@@ -48,6 +48,20 @@ int main(int argc, char **argv) {
   const int Nfft_v = nrows_fft * ncols;
   srand(time(NULL));
 
+  // FFT parameters
+  struct fft_config fwd_c = {
+    {ncols}, 1, M, 1, ncols_fft, M, 1, NULL, NULL
+  };
+  struct fft_config filt_c = {
+    {ncols}, 1, M, ncols, ncols_fft, 1, 1, NULL, NULL
+  };
+  struct fft_config inv_c = {
+    {ncols}, 1, M, ncols_fft, ncols, 1, 1, NULL, NULL
+  };
+  struct fft_config col_c = {
+    {M}, 1, ncols, 1, 1, ncols, ncols, NULL, NULL
+  };
+
   // Arrays
   double *full_in = (double *) fftw_malloc(sizeof(double) * Nfull);
   double filt[Nfilt];
@@ -96,44 +110,22 @@ int main(int argc, char **argv) {
   }
 
   // Data polyphase FFT
-  int n_size[] = {ncols};
-  int rank = 1;
-  int howmany = M;
-  int idist = 1;
-  int odist = ncols_fft;
-  int istride = M;
-  int ostride = 1;
-  int *inembed = NULL;
-  int *onembed = NULL;
-  fftw_plan psig = fftw_plan_many_dft_r2c(rank, n_size, howmany, full_in, inembed, istride, idist, fft_in,
-                                            onembed, ostride, odist, FFTW_ESTIMATE);
+  fftw_plan psig = fftw_plan_many_dft_r2c(fwd_c.rank, fwd_c.n_size, fwd_c.howmany, full_in,
+                                          fwd_c.inembed, fwd_c.istride, fwd_c.idist, fft_in,
+                                          fwd_c.onembed, fwd_c.ostride, fwd_c.odist, FFTW_ESTIMATE);
 
   // Filter FFT
-  n_size[0] = ncols;
-  rank = 1;
-  howmany = M;
-  idist = ncols;
-  odist = ncols_fft;
-  istride = 1;
-  ostride = 1;
-  inembed = NULL;
-  onembed = NULL;
-  fftw_plan pfilt = fftw_plan_many_dft_r2c(rank, n_size, howmany, filt_full, inembed, istride, idist, fft_filt,
-                                             onembed, ostride, odist, FFTW_ESTIMATE);
+  fftw_plan pfilt = fftw_plan_many_dft_r2c(filt_c.rank, filt_c.n_size, filt_c.howmany, filt_full,
+                                           filt_c.inembed, filt_c.istride, filt_c.idist, fft_filt,
+                                           filt_c.onembed, filt_c.ostride, filt_c.odist, FFTW_ESTIMATE);
   fftw_execute(pfilt);
   
   // IFFT plan
-  n_size[0] = ncols;  // LOGICAL size, not PHYSICAL size of output array
-  rank = 1;
-  howmany = M;
-  idist = ncols_fft;
-  odist = ncols;
-  istride = 1;
-  ostride = 1;
-  inembed = NULL;
-  onembed = NULL;
-  fftw_plan pinv = fftw_plan_many_dft_c2r(rank, n_size, howmany, fft_mult, inembed, istride, idist, conv_out,
-                                            onembed, ostride, odist, FFTW_ESTIMATE);
+  fftw_plan pinv = fftw_plan_many_dft_c2r(inv_c.rank, inv_c.n_size, inv_c.howmany, fft_mult,
+                                          inv_c.inembed, inv_c.istride, inv_c.idist, conv_out,
+                                          inv_c.onembed, inv_c.ostride, inv_c.odist, FFTW_ESTIMATE);
+
+  // TODO: this section will be in the loop
 
   // Forward FFT
   fftw_execute(psig);
@@ -145,18 +137,12 @@ int main(int argc, char **argv) {
   fftw_execute(pinv);
 
   // Perform DFT down columns to get channelized output
-  n_size[0] = M;
-  rank = 1;
-  howmany = ncols;
-  idist = 1;
-  odist = 1;
-  istride = ncols;
-  ostride = ncols;
-  inembed = NULL;
-  onembed = NULL;
-  fftw_plan pudft = fftw_plan_many_dft_r2c(rank, n_size, howmany, conv_out, inembed, istride, idist, udft,
-                                             onembed, ostride, odist, FFTW_ESTIMATE);
+  fftw_plan pudft = fftw_plan_many_dft_r2c(col_c.rank, col_c.n_size, col_c.howmany, conv_out,
+                                           col_c.inembed, col_c.istride, col_c.idist, udft,
+                                           col_c.onembed, col_c.ostride, col_c.odist, FFTW_ESTIMATE);
   fftw_execute(pudft);
+
+  // End loop
 
   // Write outputs
   write_out("filtered.bin", (void *) &conv_out[0], sizeof(double), Nfull);
