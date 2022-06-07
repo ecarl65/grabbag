@@ -13,6 +13,7 @@ Mh = int(M / 2) + 1
 indata = np.fromfile("input.bin", dtype=np.float64)
 outdata = np.fromfile("filtered.bin", dtype=np.float64)
 channelized = np.reshape(np.fromfile("channelized.bin", dtype=np.complex128), (Mh, -1))
+channelized = np.reshape(np.fromfile("channelized.bin", dtype=np.complex128), (-1, Mh)).T
 filt = np.fromfile("filter.bin", dtype=np.float64)
 fdata = np.reshape(np.fromfile("fftdata.bin", dtype=np.complex128), (M, -1))
 ffilt = np.reshape(np.fromfile("fftfilt.bin", dtype=np.complex128), (M, -1))

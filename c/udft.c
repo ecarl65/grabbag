@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
   const int Nfft_v = nrows_fft * ncols;
   srand(time(NULL));
 
-  // FFT parameters
+  // FFT parameters: n_size, rank, howmany, idist, odist, istride, ostride, inembed, onembed
   struct fft_config fwd_c = {
     {ncols}, 1, M, 1, ncols_fft, M, 1, NULL, NULL
   };
@@ -59,7 +59,8 @@ int main(int argc, char **argv) {
     {ncols}, 1, M, ncols_fft, ncols, 1, 1, NULL, NULL
   };
   struct fft_config col_c = {
-    {M}, 1, ncols, 1, 1, ncols, ncols, NULL, NULL
+    // {M}, 1, ncols, 1, 1, ncols, ncols, NULL, NULL       // Non-transposed
+    {M}, 1, ncols, 1, nrows_fft, ncols, 1, NULL, NULL   // Transposed version - Makes O/S easier
   };
 
   // Arrays
