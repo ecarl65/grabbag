@@ -26,12 +26,17 @@ axs[0, 0].plot(filt)
 axs[0, 0].set_title("Filter Taps")
 axs[0, 0].grid(True)
 
+fc_list = np.linspace(0, fs/2, M//2 + 1, endpoint=True)
 tin = np.arange(len(indata)) / fs
 tout = np.arange(len(outdata)) / fs
-w, h = signal.freqz(filt, 1, fs=10e3)
-axs[1, 0].plot(w, 20*np.log10(np.abs(h)))
-axs[1, 0].plot([1250/2, 1250/2], [-100, 0], "r:")
-axs[1, 0].set_title("Filter Frequency Response")
+tfilt = np.arange(len(filt)) / fs
+
+for fc in fc_list:
+    w, h = signal.freqz(filt * np.exp(1j * 2 * np.pi * fc * tfilt), 1, fs=10e3, whole=False)
+    axs[1, 0].plot(w, 20*np.log10(np.abs(h)))
+    axs[1, 0].plot([1250/2, 1250/2], [-100, 0], "r:")
+    axs[1, 0].plot([fc, fc], [-100, 0], "m:")
+axs[1, 0].set_title("Channelizer Frequency Response")
 axs[1, 0].set_xlabel("Frequency (Hz)")
 axs[1, 0].set_ylabel("Magnitude (dB)")
 axs[1, 0].grid(True)
@@ -45,8 +50,10 @@ axs[0, 1].plot(tds[:(len(tds) - Noutdelay)], np.real(channelized[-1, Noutdelay:]
 axs[0, 1].set_title("Input & Output (Normalized)")
 axs[0, 1].set_xlabel("Time (s)")
 axs[0, 1].set_ylabel("Amplitude")
-axs[0, 1].legend()
+#  axs[0, 1].legend()
+axs[0, 1].text(0.1, -1.5, "First/Last Channels real, others magnitude", horizontalalignment="center", verticalalignment="center", bbox=dict(facecolor='white', alpha=0.9))
 axs[0, 1].grid(True)
+axs[0, 1].set_ylim(-2, 1.5)
 
 f = np.linspace(0, fs / 2, fdata.shape[1], endpoint=False)
 c = np.arange(fdata.shape[0])
