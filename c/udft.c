@@ -19,9 +19,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <time.h>
-#include <complex.h>
-#include <fftw3.h>
 #include <tgmath.h>
+#include <fftw3.h>
 #include <string.h>
 #include "utils.h"
 
@@ -32,18 +31,14 @@ int main(int argc, char **argv) {
   const int Nds = Nfull / M;
   const int Nfilt = 16 * M + 1;
   const int Nfilt_half = (Nfilt - 1) >> 1;
-  const int Noutdelay = Nfilt_half / M;
-  const int Nfill = Nfull - Nfilt + 1;
-  const double pi = acosf(-1);
   const double Fs = 10e3;
   const double Ts = 1.0 / Fs;
   const double Tfull = Nfull * Ts;
-  const double fc = 2600;
   const double fcutoff = Fs / (2 * M);
-  const int nrows = M;
   const int ncols = Nds;
   const int ncols_fft = ((Nfull / M) / 2 + 1);
   const int nrows_fft = M / 2 + 1;
+  const int Noutdelay = Nfilt_half / M * nrows_fft;
   const int Nfft_h = ncols_fft * M;
   const int Nfft_v = nrows_fft * ncols;
   srand(time(NULL));
@@ -118,7 +113,7 @@ int main(int argc, char **argv) {
   write_out("filtered.bin", (void *) &conv_out[0], sizeof(double), Nfull);
   write_out("input.bin", (void *) &full_in[0], sizeof(double), Nfull);
   write_out("filter.bin", (void *) &filt[0], sizeof(double), Nfilt);
-  write_out("channelized.bin", (void *) &udft[0], sizeof(fftw_complex), Nfft_v);
+  write_out("channelized.bin", (void *) &udft[Noutdelay], sizeof(fftw_complex), Nfft_v - Noutdelay);
   write_out("fftdata.bin", (void *) &fft_in[0], sizeof(fftw_complex), Nfft_h);
   write_out("fftfilt.bin", (void *) &fft_filt[0], sizeof(fftw_complex), Nfft_h);
 

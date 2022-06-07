@@ -23,5 +23,5 @@ udft: udft.c
 .phony: clean
 
 clean:
-	rm -f test_fftw osconv dsconv poly
+	rm -f test_fftw osconv dsconv poly udft
 

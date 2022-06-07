@@ -1,8 +1,9 @@
 #include <stdlib.h>
 #include <stdint.h>
-#include <complex.h>
 #include <tgmath.h>
 #include <string.h>
+
+#define M_PI 3.14159265358979323846
 
 struct fft_config {
   int n_size[1];
@@ -33,7 +34,6 @@ double coarse_gaussian() {
 
 void poly_filt_design(int Nfilt, double fcutoff, double Fs, double* filt, double* filt_full, int ncols, int downsamp) {
   double Ts = 1 / Fs;
-  const double pi = acosf(-1);
   const int Nfilt_half = (Nfilt - 1) >> 1;
 
   // Make filter
@@ -44,11 +44,11 @@ void poly_filt_design(int Nfilt, double fcutoff, double Fs, double* filt, double
     if (m == 0) {
       filt[outidx] = 2 * fcutoff / Fs;
     } else {
-      filt[outidx] = sin(2 * pi * fcutoff * m / Fs) / (m * pi);
+      filt[outidx] = sin(2 * M_PI * fcutoff * m / Fs) / (m * M_PI);
     }
 
     // Hamming window and normalization
-    filt[outidx] *= (0.54 - 0.46 * cos(2 * pi * outidx / Nfilt));
+    filt[outidx] *= (0.54 - 0.46 * cos(2 * M_PI * outidx / Nfilt));
     filt_sum += filt[outidx++];
   }
   for (int m = 0; m < Nfilt; m++) filt[m] /= filt_sum;  // Normalize the filter
@@ -70,22 +70,20 @@ void poly_filt_design(int Nfilt, double fcutoff, double Fs, double* filt, double
 
 void make_chirp(double* full_in, int Nfull, double Fs, double Tfull) {
   double Ts = 1 / Fs;
-  const double pi = acosf(-1);
 
   // Make input chirp
   for (int m = 0; m < Nfull; m++) {
-    /* full_in[m] = cos(2 * pi * fc * m * Ts) + coarse_gaussian() / 10.0; */
-    full_in[m] = sin(2 * pi * (2 * Fs / Tfull * pow(Ts * m, 2) / 2)) + coarse_gaussian() / 10.0;
+    /* full_in[m] = cos(2 * M_PI * fc * m * Ts) + coarse_gaussian() / 10.0; */
+    full_in[m] = sin(2 * M_PI * (2 * Fs / Tfull * pow(Ts * m, 2) / 2)) + coarse_gaussian() / 10.0;
   }
 }
 
 void make_sinuosoid(double* full_in, int Nfull, double Fs, double fc) {
   double Ts = 1 / Fs;
-  const double pi = acosf(-1);
 
   // Make input chirp
   for (int m = 0; m < Nfull; m++) {
-    full_in[m] = cos(2 * pi * fc * m * Ts) + coarse_gaussian() / 10.0;
-    // full_in[m] = sin(2 * pi * (2 * Fs / Tfull * pow(Ts * m, 2) / 2)) + coarse_gaussian() / 10.0;
+    full_in[m] = cos(2 * M_PI * fc * m * Ts) + coarse_gaussian() / 10.0;
+    // full_in[m] = sin(2 * M_PI * (2 * Fs / Tfull * pow(Ts * m, 2) / 2)) + coarse_gaussian() / 10.0;
   }
 }
