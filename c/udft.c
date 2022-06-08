@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
   const int M = 8; // Downsample factor
   const int Nfull = 256 * M;  // Total number of samples
   const int Nds = Nfull / M;
-  const int Nfilt = 16 * M + 1;
+  const int Nfilt = 8 * M + 1;
   const int Nfilt_half = (Nfilt - 1) >> 1;
   const double Fs = 10e3;
   const double Ts = 1.0 / Fs;
