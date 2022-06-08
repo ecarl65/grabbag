@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  osconv.c
+ *       Filename:  udft.c
  *
  *    Description:  Testing overlap/save with FFTW in C to get the basic right before
  *                  using in the channelizer.
@@ -11,7 +11,7 @@
  *       Revision:  none
  *       Compiler:  gcc
  *
- *         Author:  YOUR NAME (), 
+ *         Author:  Eric Carlsen (carlsen.eric@gmail.com), 
  *   Organization:  
  *
  * =====================================================================================
