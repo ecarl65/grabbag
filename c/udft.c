@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
   // Buffer sizes
   const int n_full = 256 * downsamp;  // Total number of samples
   const int n_filt = 8 * downsamp + 1;
-  const int n_buffer = (n_filt - 1) * 16;  // Size of the buffers
+  const int n_buffer = (n_filt - 1) * 8;  // Size of the buffers
   const int n_cols = n_buffer / downsamp;
   const int n_cols_fft = ((n_buffer / downsamp) / 2 + 1);
   const int n_rows_fft = downsamp / 2 + 1;
@@ -44,12 +44,34 @@ int main(int argc, char **argv) {
   const int out_valid_samp = out_valid_r * n_rows_fft;
   const int n_valid = (n_buffer - n_filt + 1) / downsamp * n_rows_fft;
   /* const int n_channel_delay = n_delay / downsamp * n_rows_fft; */
+
+  printf("Downsample amount: %d\n", downsamp);
+  printf("Number of input samples: %d\n", n_full);
+  printf("Filter length: %d\n", n_filt);
+  printf("Size of buffer: %d\n", n_buffer);
+  printf("Number of samples per output channel per buffer: %d\n", n_cols);
+  printf("Number of samples per output channel per buffer in freq domain: %d\n", n_cols_fft);
+  printf("Number of output channels: %d\n", n_rows_fft);
+  printf("Number of samples in FFT of data and filter: %d\n", n_fft_h);
+  printf("Number of samples in modulating FFT across channels: %d\n", n_fft_v);
+  printf("Total number of output samples: %d\n", n_out);
+  printf("Filter delay in samples at input rate: %d\n", n_delay);
+  printf("Output row for zero group delay of filter: %d\n", n_delay_r);
+  printf("Output sample for zero group delay of filter: %d\n", n_delay_samp);
+  printf("Output row of valid overlap/save data: %d\n", out_valid_r);
+  printf("Output sample of valid overlap/save data: %d\n", out_valid_samp);
+  printf("Number of valid output samples: %d\n", n_valid);
   
   // Frequency and time constants
   const double samp_rate = 10e3;
   const double samp_period = 1.0 / samp_rate;
   const double chirp_period = n_full * samp_period / 2;
   const double f_cutoff = samp_rate / (2 * downsamp);
+
+  printf("Sample rate: %e\n", samp_rate);
+  printf("Sample period: %e\n", samp_period);
+  printf("Chirp period: %e\n", chirp_period);
+  printf("Cutoff frequency: %e\n", f_cutoff);
 
   // FFT parameters: n_size, rank, howmany, idist, odist, istride, ostride, inembed, onembed
   struct fft_config fwd_c = {
@@ -106,9 +128,11 @@ int main(int argc, char **argv) {
                                            col_c.onembed, col_c.ostride, col_c.odist, FFTW_ESTIMATE);
 
   // TODO: this section will be in the loop
-  for (size_t idx = 0; idx < 2; idx++) {  // TODO Get right number of buffers
-    /* int in_start = n_valid * idx; */
-    int in_start = n_fft_v * idx;
+  const int num_loops = (n_full - n_cols) / n_valid;
+  printf("Number of loops: %d\n", num_loops);
+  for (size_t idx = 0; idx < 4; idx++) {  // TODO Get right number of buffers
+    int in_start = n_valid * idx;
+    /* int in_start = n_fft_v * idx; */
 
     // Forward FFT of this buffer of data
     fftw_execute_dft_r2c(psig, &full_in[in_start], fft_in);
@@ -123,9 +147,11 @@ int main(int argc, char **argv) {
 
     // TODO Copy udft to output, or append to output file
     // Save only valid portion. Re-normalize inverse FFT.
-    for (int m = 0; m < n_fft_v; m++) {
-      /* full_out[m + in_start + n_delay_samp] = udft[m + out_valid_samp]; */
-      full_out[m + in_start] = udft[m];
+    /* for (int m = 0; m < n_fft_v; m++) { */
+    printf("Copying from UDFT output to %d\n", in_start + n_delay_samp);
+    for (int m = 0; m < n_valid; m++) {
+      full_out[m + in_start + n_delay_samp] = udft[m + out_valid_samp] * 4;
+      /* full_out[m + in_start] = udft[m] * 4;  // Why 4 ? Downsamp/2? */
     }
 
   } // End loop
@@ -133,7 +159,6 @@ int main(int argc, char **argv) {
   // Write outputs
   write_out("filtered.bin", (void *) &conv_out[0], sizeof(double), n_buffer);
   write_out("input.bin", (void *) &full_in[0], sizeof(double), n_full);
-  write_out("output.bin", (void *) &full_out[0], sizeof(double), n_out);
   write_out("filter.bin", (void *) &filt[0], sizeof(double), n_filt);
   write_out("onebuffer.bin", (void *) &udft[0], sizeof(fftw_complex), n_fft_v);
   write_out("channelized.bin", (void *) &full_out[0], sizeof(fftw_complex), n_out);
