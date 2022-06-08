@@ -25,56 +25,67 @@
 #include "utils.h"
 
 int main(int argc, char **argv) {
-  // Variables
   const int downsamp = 8; // Downsample factor
+
+  // Buffer sizes
   const int n_full = 256 * downsamp;  // Total number of samples
   const int n_filt = 8 * downsamp + 1;
-  const int n_buffer = (n_filt - 1) * 4;
+  const int n_buffer = (n_filt - 1) * 16;  // Size of the buffers
+  const int n_cols = n_buffer / downsamp;
+  const int n_cols_fft = ((n_buffer / downsamp) / 2 + 1);
+  const int n_rows_fft = downsamp / 2 + 1;
+  const int n_fft_h = n_cols_fft * downsamp;
+  const int n_fft_v = n_rows_fft * n_cols;
+  const int n_out = n_full / downsamp * n_rows_fft;
   const int n_delay = (n_filt - 1) >> 1;
+  const int n_delay_r = n_delay / downsamp;
+  const int n_delay_samp = n_delay_r * n_rows_fft;
+  const int out_valid_r = (n_filt - 1) / downsamp;
+  const int out_valid_samp = out_valid_r * n_rows_fft;
+  const int n_valid = (n_buffer - n_filt + 1) / downsamp * n_rows_fft;
+  /* const int n_channel_delay = n_delay / downsamp * n_rows_fft; */
+  
+  // Frequency and time constants
   const double samp_rate = 10e3;
   const double samp_period = 1.0 / samp_rate;
   const double chirp_period = n_full * samp_period / 2;
   const double f_cutoff = samp_rate / (2 * downsamp);
-  const int ncols = n_full / downsamp;
-  const int ncols_fft = ((n_full / downsamp) / 2 + 1);
-  const int nrows_fft = downsamp / 2 + 1;
-  const int n_channel_delay = n_delay / downsamp * nrows_fft;
-  const int n_fft_h = ncols_fft * downsamp;
-  const int n_fft_v = nrows_fft * ncols;
 
   // FFT parameters: n_size, rank, howmany, idist, odist, istride, ostride, inembed, onembed
   struct fft_config fwd_c = {
-    {ncols}, 1, downsamp, 1, ncols_fft, downsamp, 1, NULL, NULL
+    {n_cols}, 1, downsamp, 1, n_cols_fft, downsamp, 1, NULL, NULL
   };
   struct fft_config filt_c = {
-    {ncols}, 1, downsamp, ncols, ncols_fft, 1, 1, NULL, NULL
+    {n_cols}, 1, downsamp, n_cols, n_cols_fft, 1, 1, NULL, NULL
   };
   struct fft_config inv_c = {
-    {ncols}, 1, downsamp, ncols_fft, ncols, 1, 1, NULL, NULL
+    {n_cols}, 1, downsamp, n_cols_fft, n_cols, 1, 1, NULL, NULL
   };
   struct fft_config col_c = {
-    // {downsamp}, 1, ncols, 1, 1, ncols, ncols, NULL, NULL       // Non-transposed
-    {downsamp}, 1, ncols, 1, nrows_fft, ncols, 1, NULL, NULL   // Transposed version - Makes O/S easier
+    // {downsamp}, 1, n_cols, 1, 1, n_cols, n_cols, NULL, NULL       // Non-transposed
+    {downsamp}, 1, n_cols, 1, n_rows_fft, n_cols, 1, NULL, NULL   // Transposed version - Makes overlap/save easier
   };
 
   // Arrays
-  double *full_in = (double *) fftw_malloc(sizeof(double) * n_full);
+  double *full_in = fftw_alloc_real(n_full);
+  fftw_complex *full_out = fftw_alloc_complex(n_out);
   double filt[n_filt];  // Short, non-zero taps only, just leave on the stack. Will copy to below before FFT.
-  double *filt_full = (double *) fftw_malloc(sizeof(double) * n_full);
-  fftw_complex *fft_in = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * n_fft_h);
-  fftw_complex *fft_filt = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * n_fft_h);
-  double *conv_out = (double *) fftw_malloc(sizeof(double) * n_full);
-  fftw_complex *fft_mult = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * n_fft_h);
-  fftw_complex *udft = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * n_fft_v);
+  double *buffer_in = fftw_alloc_real(n_buffer);
+  double *filt_full = fftw_alloc_real(n_buffer);
+  fftw_complex *fft_in = fftw_alloc_complex(n_fft_h);
+  fftw_complex *fft_filt = fftw_alloc_complex(n_fft_h);
+  double *conv_out = fftw_alloc_real(n_buffer);
+  fftw_complex *fft_mult = fftw_alloc_complex(n_fft_h);
+  fftw_complex *udft = fftw_alloc_complex(n_fft_v);
 
   // Design filter and do polyphase decomposition
-  poly_filt_design(n_filt, f_cutoff, samp_rate, &filt[0], filt_full, ncols, downsamp);
+  poly_filt_design(n_filt, f_cutoff, samp_rate, &filt[0], filt_full, n_cols, downsamp);
 
   // Make input chirp
   make_chirp(full_in, n_full, samp_rate, chirp_period);
 
   // Data polyphase FFT
-  fftw_plan psig = fftw_plan_many_dft_r2c(fwd_c.rank, fwd_c.n_size, fwd_c.howmany, full_in,
+  fftw_plan psig = fftw_plan_many_dft_r2c(fwd_c.rank, fwd_c.n_size, fwd_c.howmany, buffer_in,
                                           fwd_c.inembed, fwd_c.istride, fwd_c.idist, fft_in,
                                           fwd_c.onembed, fwd_c.ostride, fwd_c.odist, FFTW_ESTIMATE);
 
@@ -89,39 +100,51 @@ int main(int argc, char **argv) {
                                           inv_c.inembed, inv_c.istride, inv_c.idist, conv_out,
                                           inv_c.onembed, inv_c.ostride, inv_c.odist, FFTW_ESTIMATE);
 
-  // TODO: this section will be in the loop
-
-  // Forward FFT of this buffer of data
-  fftw_execute(psig);
-  // fftw_execute_dft_r2c(psig, &full_in[idx], fft_in);
-
-  // Compute circular convolution through multiplying in frequency domain.
-  for (int m = 0; m < n_fft_h; m++) fft_mult[m] = fft_filt[m] * fft_in[m];
-
-  // Perform inverse FFT to get real data out of convolution
-  fftw_execute(pinv);
-
   // Perform FFT down columns to get channelized output. Output may be transposed.
   fftw_plan pudft = fftw_plan_many_dft_r2c(col_c.rank, col_c.n_size, col_c.howmany, conv_out,
                                            col_c.inembed, col_c.istride, col_c.idist, udft,
                                            col_c.onembed, col_c.ostride, col_c.odist, FFTW_ESTIMATE);
-  fftw_execute(pudft);
 
-  // TODO Copy udft to output, or append to output file
+  // TODO: this section will be in the loop
+  for (size_t idx = 0; idx < 2; idx++) {  // TODO Get right number of buffers
+    /* int in_start = n_valid * idx; */
+    int in_start = n_fft_v * idx;
 
-  // End loop
+    // Forward FFT of this buffer of data
+    fftw_execute_dft_r2c(psig, &full_in[in_start], fft_in);
+
+    // Compute circular convolution through multiplying in frequency domain.
+    for (int m = 0; m < n_fft_h; m++) fft_mult[m] = fft_filt[m] * fft_in[m];
+
+    // Perform inverse FFT to get real data out of convolution
+    fftw_execute(pinv);
+
+    fftw_execute(pudft);
+
+    // TODO Copy udft to output, or append to output file
+    // Save only valid portion. Re-normalize inverse FFT.
+    for (int m = 0; m < n_fft_v; m++) {
+      /* full_out[m + in_start + n_delay_samp] = udft[m + out_valid_samp]; */
+      full_out[m + in_start] = udft[m];
+    }
+
+  } // End loop
 
   // Write outputs
-  write_out("filtered.bin", (void *) &conv_out[0], sizeof(double), n_full);
+  write_out("filtered.bin", (void *) &conv_out[0], sizeof(double), n_buffer);
   write_out("input.bin", (void *) &full_in[0], sizeof(double), n_full);
+  write_out("output.bin", (void *) &full_out[0], sizeof(double), n_out);
   write_out("filter.bin", (void *) &filt[0], sizeof(double), n_filt);
-  write_out("channelized.bin", (void *) &udft[n_channel_delay], sizeof(fftw_complex), n_fft_v - n_channel_delay);
+  write_out("onebuffer.bin", (void *) &udft[0], sizeof(fftw_complex), n_fft_v);
+  write_out("channelized.bin", (void *) &full_out[0], sizeof(fftw_complex), n_out);
   write_out("fftdata.bin", (void *) &fft_in[0], sizeof(fftw_complex), n_fft_h);
   write_out("fftfilt.bin", (void *) &fft_filt[0], sizeof(fftw_complex), n_fft_h);
 
   // Free memory
   fftw_free(full_in);
+  fftw_free(full_out);
   fftw_free(filt_full);
+  fftw_free(buffer_in);
   fftw_free(udft);
   fftw_free(fft_in);
   fftw_free(fft_filt);

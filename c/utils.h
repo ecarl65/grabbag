@@ -58,7 +58,8 @@ void poly_filt_design(int Nfilt, double fcutoff, double Fs, double* filt, double
     }
 
     // Hamming window and normalization
-    filt[outidx] *= (0.54 - 0.46 * cos(2 * M_PI * outidx / Nfilt));
+    // filt[outidx] *= (0.54 - 0.46 * cos(2 * M_PI * outidx / Nfilt));
+    filt[outidx] *= ((25.0 / 46.0) - (21.0 / 46.0) * cos(2 * M_PI * outidx / Nfilt));
     filt_sum += filt[outidx++];
   }
   for (int m = 0; m < Nfilt; m++) filt[m] /= filt_sum;  // Normalize the filter

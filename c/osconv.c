@@ -43,18 +43,18 @@ int main(int argc, char **argv) {
   const double Ts = 1.0 / Fs;
   const double fc = 100;
   const double ff = 2 * fc;
-  double *full_in = (double *) fftw_malloc(sizeof(double) * Nfull);
+  double *full_in = fftw_alloc_real(Nfull);
   srand(time(NULL));
   for (int m = 0; m < Nfull; m++) {
     full_in[m] = cos(2 * pi * fc * m * Ts) + coarse_gaussian() / 10.0;
   }
-  double *full_out = fftw_malloc(sizeof(double) * Nfull);
+  double *full_out = fftw_alloc_real(Nfull);
   memset(&full_out[0], 0, sizeof(full_out[0]) * Nfull);
 
   // Make filter
   const int Nfilt = 129;
   const int Nfilt_half = (Nfilt - 1) >> 1;
-  double *filt = (double *) fftw_malloc(sizeof(double) * Nbuf);
+  double *filt = fftw_alloc_real(Nbuf);
   int outidx = 0;
   double filt_sum = 0;
   for (int m = -Nfilt_half; m <= Nfilt_half; m++) {
@@ -76,15 +76,15 @@ int main(int argc, char **argv) {
       filt[m] = 0.0f;
     }
   }
-  fftw_complex *f_filt_out = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nbuf);
+  fftw_complex *f_filt_out = fftw_alloc_complex(Nbuf);
   fftw_plan pfilt = fftw_plan_dft_r2c_1d(Nbuf, filt, f_filt_out, FFTW_ESTIMATE);
   fftw_execute(pfilt);
   
   // FFT plans
-  double *buf = (double *) fftw_malloc(sizeof(double) * Nbuf);
-  fftw_complex *f_buf = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * Nbuf);
+  double *buf = fftw_alloc_real(Nbuf);
+  fftw_complex *f_buf = fftw_alloc_complex(Nbuf);
   fftw_plan psig = fftw_plan_dft_r2c_1d(Nbuf, buf, f_buf, FFTW_ESTIMATE);
-  double *conv_out = (double *) fftw_malloc(sizeof(double) * Nbuf);
+  double *conv_out = fftw_alloc_real(Nbuf);
   fftw_plan pinv = fftw_plan_dft_c2r_1d(Nbuf, f_buf, conv_out, FFTW_ESTIMATE);
 
   // TODO Use wisdom
@@ -105,7 +105,6 @@ int main(int argc, char **argv) {
       f_buf[m] *= f_filt_out[m];
     }
     fftw_execute(pinv);
-    /* fftw_execute_dft_c2r(pinv, f_buf, conv_out); */
 
     // Save only valid portion. Re-normalize inverse FFT.
     for (int m = 0; m < nv; m++) {

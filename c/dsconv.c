@@ -108,7 +108,6 @@ int main(int argc, char **argv) {
       f_buf[m] *= f_filt_out[m];
     }
     fftw_execute(pinv);
-    /* fftw_execute_dft_c2r(pinv, f_buf, conv_out); */
 
     // Save only valid portion. Re-normalize inverse FFT.
     for (int m = 0; m < nv; m++) {

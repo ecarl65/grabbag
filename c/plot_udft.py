@@ -13,6 +13,7 @@ Mh = int(M / 2) + 1
 indata = np.fromfile("input.bin", dtype=np.float64)
 outdata = np.fromfile("filtered.bin", dtype=np.float64)
 channelized = np.reshape(np.fromfile("channelized.bin", dtype=np.complex128), (-1, Mh))
+chann_buf = np.reshape(np.fromfile("onebuffer.bin", dtype=np.complex128), (-1, Mh))
 filt = np.fromfile("filter.bin", dtype=np.float64)
 fdata = np.reshape(np.fromfile("fftdata.bin", dtype=np.complex128), (M, -1))
 ffilt = np.reshape(np.fromfile("fftfilt.bin", dtype=np.complex128), (M, -1))
@@ -43,10 +44,12 @@ axs[1, 0].grid(True)
 
 pchan = 0
 tds = np.arange(channelized.shape[0]) / fs * M
+tob = np.arange(chann_buf.shape[0]) / fs * M
 axs[0, 1].plot(tin, indata, label="Input", color="dimgray", alpha=0.3)
 axs[0, 1].plot(tds, np.real(channelized[:, 0]) / channelized.shape[0], label=f"Channel 0 (real)")
 axs[0, 1].plot(tds, np.abs(channelized[:, 1:-1]) / channelized.shape[0] * 2, label="Other Channels (mag)")
 axs[0, 1].plot(tds, np.real(channelized[:, -1]) / channelized.shape[0], label=f"Channel {M >> 1} (real)")
+#  axs[0, 1].plot(tob, np.abs(chann_buf) / chann_buf.shape[0] * 2, label=f"One Buffer Channelized Output")
 axs[0, 1].set_title("Input & Output (Normalized)")
 axs[0, 1].set_xlabel("Time (s)")
 axs[0, 1].set_ylabel("Amplitude")
