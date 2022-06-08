@@ -2,9 +2,11 @@
 #include <stdint.h>
 #include <tgmath.h>
 #include <string.h>
+#include <time.h>
 
 #define M_PI 3.14159265358979323846
 
+// {{{ fft_config
 struct fft_config {
   int n_size[1];
   int rank;
@@ -16,13 +18,17 @@ struct fft_config {
   int *inembed;
   int *onembed;
 };
+// }}}
 
+// {{{ write_out
 void write_out(char *file, void *addr, size_t size, size_t numels) {
   FILE* fout = fopen(file, "wb");
   fwrite(addr, size, numels, fout);
   fclose(fout);
 }
+// }}}
 
+// {{{ coarse_gaussian_seed
 double coarse_gaussian_seed(unsigned int seed) {
   srand(seed);
   double out = 0;
@@ -34,14 +40,18 @@ double coarse_gaussian_seed(unsigned int seed) {
 
   return out;
 }
+// }}}
 
+// {{{ coarse_gaussian
 double coarse_gaussian() {
   unsigned int seed = time(NULL);
   double output = coarse_gaussian_seed(seed);
 
   return output;
 }
+// }}}
 
+// {{{ poly_filt_design
 void poly_filt_design(int Nfilt, double fcutoff, double Fs, double* filt, double* filt_full, int ncols, int downsamp) {
   double Ts = 1 / Fs;
   const int Nfilt_half = (Nfilt - 1) >> 1;
@@ -78,7 +88,9 @@ void poly_filt_design(int Nfilt, double fcutoff, double Fs, double* filt, double
     }
   }
 }
+// }}} 
 
+// {{{ make_chirp
 void make_chirp(double* full_in, int Nfull, double Fs, double Tfull) {
   double Ts = 1 / Fs;
 
@@ -87,7 +99,9 @@ void make_chirp(double* full_in, int Nfull, double Fs, double Tfull) {
     full_in[m] = sin(2 * M_PI * (Fs / Tfull * pow(Ts * m, 2) / 2)) + coarse_gaussian() / 10.0;
   }
 }
+// }}}
 
+// {{{ make_sinusoid
 void make_sinuosoid(double* full_in, int Nfull, double Fs, double fc) {
   double Ts = 1 / Fs;
 
@@ -96,3 +110,4 @@ void make_sinuosoid(double* full_in, int Nfull, double Fs, double fc) {
     full_in[m] = cos(2 * M_PI * fc * m * Ts) + coarse_gaussian() / 10.0;
   }
 }
+// }}}

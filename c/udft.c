@@ -40,11 +40,13 @@ int main(int argc, char **argv) {
   const int n_delay = (n_filt - 1) >> 1;
   const int n_delay_r = n_delay / downsamp;
   const int n_delay_samp = n_delay_r * n_rows_fft;
-  const int out_valid_r = (n_filt - 1) / downsamp;
-  const int out_valid_samp = out_valid_r * n_rows_fft;
-  const int n_valid = (n_buffer - n_filt + 1) / downsamp * n_rows_fft;
+  const int idx_out_valid_r = (n_filt - 1) / downsamp;
+  const int idx_out_valid_samp = idx_out_valid_r * n_rows_fft;
+  const int n_in_valid = n_buffer - n_filt + 1;
+  const int n_out_valid = n_in_valid / downsamp * n_rows_fft;
   /* const int n_channel_delay = n_delay / downsamp * n_rows_fft; */
 
+#ifdef DEBUG
   printf("Downsample amount: %d\n", downsamp);
   printf("Number of input samples: %d\n", n_full);
   printf("Filter length: %d\n", n_filt);
@@ -58,9 +60,11 @@ int main(int argc, char **argv) {
   printf("Filter delay in samples at input rate: %d\n", n_delay);
   printf("Output row for zero group delay of filter: %d\n", n_delay_r);
   printf("Output sample for zero group delay of filter: %d\n", n_delay_samp);
-  printf("Output row of valid overlap/save data: %d\n", out_valid_r);
-  printf("Output sample of valid overlap/save data: %d\n", out_valid_samp);
-  printf("Number of valid output samples: %d\n", n_valid);
+  printf("Output row of valid overlap/save data: %d\n", idx_out_valid_r);
+  printf("Output sample of valid overlap/save data: %d\n", idx_out_valid_samp);
+  printf("Number of valid input samples per buffer: %d\n", n_in_valid);
+  printf("Number of valid output samples per buffer: %d\n", n_out_valid);
+#endif
   
   // Frequency and time constants
   const double samp_rate = 10e3;
@@ -68,21 +72,17 @@ int main(int argc, char **argv) {
   const double chirp_period = n_full * samp_period / 2;
   const double f_cutoff = samp_rate / (2 * downsamp);
 
+#ifdef DEBUG
   printf("Sample rate: %e\n", samp_rate);
   printf("Sample period: %e\n", samp_period);
   printf("Chirp period: %e\n", chirp_period);
   printf("Cutoff frequency: %e\n", f_cutoff);
+#endif
 
   // FFT parameters: n_size, rank, howmany, idist, odist, istride, ostride, inembed, onembed
-  struct fft_config fwd_c = {
-    {n_cols}, 1, downsamp, 1, n_cols_fft, downsamp, 1, NULL, NULL
-  };
-  struct fft_config filt_c = {
-    {n_cols}, 1, downsamp, n_cols, n_cols_fft, 1, 1, NULL, NULL
-  };
-  struct fft_config inv_c = {
-    {n_cols}, 1, downsamp, n_cols_fft, n_cols, 1, 1, NULL, NULL
-  };
+  struct fft_config fwd_c = { {n_cols}, 1, downsamp, 1, n_cols_fft, downsamp, 1, NULL, NULL };
+  struct fft_config filt_c = { {n_cols}, 1, downsamp, n_cols, n_cols_fft, 1, 1, NULL, NULL };
+  struct fft_config inv_c = { {n_cols}, 1, downsamp, n_cols_fft, n_cols, 1, 1, NULL, NULL };
   struct fft_config col_c = {
     // {downsamp}, 1, n_cols, 1, 1, n_cols, n_cols, NULL, NULL       // Non-transposed
     {downsamp}, 1, n_cols, 1, n_rows_fft, n_cols, 1, NULL, NULL   // Transposed version - Makes overlap/save easier
@@ -128,10 +128,15 @@ int main(int argc, char **argv) {
                                            col_c.onembed, col_c.ostride, col_c.odist, FFTW_ESTIMATE);
 
   // TODO: this section will be in the loop
-  const int num_loops = (n_full - n_cols) / n_valid;
+  const int num_loops = (int) (n_full - n_cols * downsamp) / n_in_valid + 1;
   printf("Number of loops: %d\n", num_loops);
-  for (size_t idx = 0; idx < 4; idx++) {  // TODO Get right number of buffers
-    int in_start = n_valid * idx;
+  for (size_t idx = 0; idx < num_loops; idx++) {  // TODO Get right number of buffers
+    int in_start = n_in_valid * idx;
+    /* int out_start = idx_out_valid_samp * idx * n_rows_fft; */
+    int out_start = n_out_valid * idx;
+#ifdef DEBUG
+    printf("Input index range: [%d, %d)\n", in_start, in_start + n_cols * downsamp);
+#endif
     /* int in_start = n_fft_v * idx; */
 
     // Forward FFT of this buffer of data
@@ -148,10 +153,11 @@ int main(int argc, char **argv) {
     // TODO Copy udft to output, or append to output file
     // Save only valid portion. Re-normalize inverse FFT.
     /* for (int m = 0; m < n_fft_v; m++) { */
-    printf("Copying from UDFT output to %d\n", in_start + n_delay_samp);
-    for (int m = 0; m < n_valid; m++) {
-      full_out[m + in_start + n_delay_samp] = udft[m + out_valid_samp] * 4;
-      /* full_out[m + in_start] = udft[m] * 4;  // Why 4 ? Downsamp/2? */
+#ifdef DEBUG
+    printf("Copying from UDFT %d to output %d\n", idx_out_valid_samp, out_start + n_delay_samp);
+#endif
+    for (int m = 0; m < n_out_valid; m++) {
+      full_out[m + out_start + n_delay_samp] = udft[m + idx_out_valid_samp] * 4;  // Why 4 ? Downsamp/2?
     }
 
   } // End loop

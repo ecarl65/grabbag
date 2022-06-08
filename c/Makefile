@@ -1,6 +1,7 @@
 
 CC=gcc
-CFLAGS=-g
+CFLAGS=-g -DDEBUG
+# CFLAGS=-g
 LIBS=-lm -lfftw3f -lfftw3
 
 all: test_fftw osconv dsconv poly udft ovudft
