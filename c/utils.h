@@ -23,13 +23,23 @@ void write_out(char *file, void *addr, size_t size, size_t numels) {
   fclose(fout);
 }
 
-double coarse_gaussian() {
+double coarse_gaussian_seed(unsigned int seed) {
+  srand(seed);
   double out = 0;
   for (int m = 0; m < 12; m++) {
     out += (double) (rand() % 100);
   }
   out /= 100.0;
   out -= 6.0;
+
+  return out;
+}
+
+double coarse_gaussian() {
+  unsigned int seed = time(NULL);
+  double output = coarse_gaussian_seed(seed);
+
+  return output;
 }
 
 void poly_filt_design(int Nfilt, double fcutoff, double Fs, double* filt, double* filt_full, int ncols, int downsamp) {
@@ -73,17 +83,15 @@ void make_chirp(double* full_in, int Nfull, double Fs, double Tfull) {
 
   // Make input chirp
   for (int m = 0; m < Nfull; m++) {
-    /* full_in[m] = cos(2 * M_PI * fc * m * Ts) + coarse_gaussian() / 10.0; */
-    full_in[m] = sin(2 * M_PI * (2 * Fs / Tfull * pow(Ts * m, 2) / 2)) + coarse_gaussian() / 10.0;
+    full_in[m] = sin(2 * M_PI * (Fs / Tfull * pow(Ts * m, 2) / 2)) + coarse_gaussian() / 10.0;
   }
 }
 
 void make_sinuosoid(double* full_in, int Nfull, double Fs, double fc) {
   double Ts = 1 / Fs;
 
-  // Make input chirp
+  // Make input sinusoid
   for (int m = 0; m < Nfull; m++) {
     full_in[m] = cos(2 * M_PI * fc * m * Ts) + coarse_gaussian() / 10.0;
-    // full_in[m] = sin(2 * M_PI * (2 * Fs / Tfull * pow(Ts * m, 2) / 2)) + coarse_gaussian() / 10.0;
   }
 }
