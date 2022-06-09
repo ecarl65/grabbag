@@ -94,3 +94,16 @@ We'll probably just assuming the starting phase is zero. If we also discretize t
 
 $$x(t)=\sin \left[2 \pi \left( \frac{c T_s^2}{2} n^2 + f_0 n T_s \right)\right]$$
 
+# Persistent Memory
+
+Trying to keep some things around from call-to-call when doing this in buffered mode is going to be a challenge. Don't want to re-design
+the filter every time and do the FFT. Or the Overlap/Save, perhaps. Although previous processing just treated each buffer as 
+unique and maybe that's the way to go. But if we can make it an object that lives in the top-level processor like currently that 
+would be ideal. But that can't be done with C. Will have to move to pybind11 or CFFI.
+
+It _is_ worth noting that to design and prepare the channelizer all it requires is:
+* The sample rate
+* The downsample factor
+* The filter overlap amount
+
+That seems simple enough that looking at the pybind11 code it can be done.

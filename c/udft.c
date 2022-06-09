@@ -123,24 +123,26 @@ int channelizer(const int downsamp, const int n_full, const int n_filt, const do
                                            col_c.inembed, col_c.istride, col_c.idist, udft,
                                            col_c.onembed, col_c.ostride, col_c.odist, FFTW_ESTIMATE);
 
-  /* fftw_complex z[n_delay_samp]; */
-  /* for (size_t m = 0; m < n_delay_samp; m++) z[m] = 0; */
-  /* write_out("channelized.bin", (void *) &z[0], sizeof(fftw_complex), n_delay_samp); */
-
-  // TODO Move this to a function
-  const int num_loops = (int) (n_full - n_cols * downsamp) / n_in_valid + 1;
+  // Move this to a function
+  const int n_loops = (int) ceil((double) n_full / n_in_valid);
 #ifdef DEBUG
-  printf("Number of loops: %d\n", num_loops);
+  printf("Number of loops: %d\n", n_loops);
 #endif
-  for (size_t idx = 0; idx < num_loops; idx++) {  // TODO Get right number of buffers
+  for (size_t idx = 0; idx < n_loops; idx++) {  // TODO Get right number of buffers
     int in_start = n_in_valid * idx;
     int out_start = n_out_valid * idx;
 #ifdef DEBUG
     printf("Input index range: [%d, %d)\n", in_start, in_start + n_cols * downsamp);
 #endif
 
-    // Forward FFT of this buffer of data
-    fftw_execute_dft_r2c(psig, &full_in[in_start], fft_in);
+    // Forward FFT of this buffer of data. If last buffer do zero padding.
+    if (n_full - in_start < n_buffer) {
+      for (size_t m = 0; m < n_full - in_start; m++) buffer_in[m] = full_in[in_start + m];
+      for (size_t m = n_full - in_start; m < n_buffer; m++) buffer_in[m] = 0;
+      fftw_execute_dft_r2c(psig, buffer_in, fft_in);
+    } else {
+      fftw_execute_dft_r2c(psig, &full_in[in_start], fft_in);
+    }
 
     // Compute circular convolution through multiplying in frequency domain.
     for (int m = 0; m < n_fft_h; m++) fft_mult[m] = fft_filt[m] * fft_in[m];
@@ -154,11 +156,10 @@ int channelizer(const int downsamp, const int n_full, const int n_filt, const do
 #ifdef DEBUG
     printf("Copying from UDFT %d to output %d\n", idx_out_valid_samp, out_start + n_delay_samp);
 #endif
-    /* write_append("channelized.bin", (void *) &udft[idx_out_valid_samp], sizeof(fftw_complex), n_out_valid); */
     for (int m = 0; m < n_out_valid; m++) {
+      if (m + out_start + n_delay_samp >= n_out) break;
       full_out[m + out_start + n_delay_samp] = udft[m + idx_out_valid_samp] / n_cols;
     }
-    /* write_append("channelized.bin", (void *) &full_out[out_start + n_delay_samp], sizeof(fftw_complex), n_out_valid); */
 
   } // End loop
 

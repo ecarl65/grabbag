@@ -22,5 +22,5 @@ Pet.o: Pet.cpp Pet.h
 	$(CXX) $(CXXFLAGS) -c $<
 
 clean:
-	rm -f *.so *.o example
+	rm -f *.so *.o example iteration_mod pet
 

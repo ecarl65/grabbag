@@ -1,6 +1,6 @@
 # To Do
 - [x] Get opt
-- [ ] Last buffer
+- [x] Last buffer
 - [ ] Single float precision
 - [ ] Oversampled version
 - [ ] OpenMP parallel FFTW
