@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
@@ -7,7 +8,10 @@ from scipy import signal
 
 rcParams["axes.grid"] = False
 
-M = 8
+if len(sys.argv) > 1:
+    M = int(sys.argv[1])
+else:
+    M = 8
 Mh = int(M / 2) + 1
 
 indata = np.fromfile("input.bin", dtype=np.float64)

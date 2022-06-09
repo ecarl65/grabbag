@@ -3,6 +3,8 @@
 - [ ] Last buffer
 - [ ] Single float precision
 - [ ] Oversampled version
+- [ ] OpenMP parallel FFTW
+- [ ] Wisdom and preserve state/info
 - [ ] Better RNG and SNR calcs
 - [ ] Timing
 - [ ] pybind11 or Cython or CFFI interface

@@ -18,6 +18,9 @@
  */
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <getopt.h>
 #include <time.h>
 #include <tgmath.h>
 #include <fftw3.h>
@@ -159,11 +162,11 @@ int channelizer(const int downsamp, const int n_full, const int n_filt, const do
 #ifdef DEBUG
     printf("Copying from UDFT %d to output %d\n", idx_out_valid_samp, out_start + n_delay_samp);
 #endif
-    /* write_out("channelized.bin", (void *) &udft[idx_out_valid_samp], sizeof(fftw_complex), n_out_valid); */
+    /* write_append("channelized.bin", (void *) &udft[idx_out_valid_samp], sizeof(fftw_complex), n_out_valid); */
     for (int m = 0; m < n_out_valid; m++) {
       full_out[m + out_start + n_delay_samp] = udft[m + idx_out_valid_samp] / n_cols;
     }
-    write_out("channelized.bin", (void *) &full_out[out_start + n_delay_samp], sizeof(fftw_complex), n_out_valid);
+    write_append("channelized.bin", (void *) &full_out[out_start + n_delay_samp], sizeof(fftw_complex), n_out_valid);
 
   } // End loop
 
@@ -198,10 +201,50 @@ int channelizer(const int downsamp, const int n_full, const int n_filt, const do
 
 int main(int argc, char **argv) {
   // Values on which all others depend
-  const int downsamp = 8; // Downsample factor
-  const int n_full = 256 * downsamp;  // Total number of samples
-  const int n_filt = 8 * downsamp + 1;
-  const double samp_rate = 10e3;
+  int downsamp = 8; // Downsample factor
+  int filt_ord = 8;
+  int full_ord = 256;
+  double samp_rate = 10e3;
+
+  int opt;
+
+  // put ':' in the starting of the string so that program can distinguish between '?' and ':' 
+  while((opt = getopt(argc, argv, ":d:f::n::s::h::")) != -1) 
+  { 
+    switch(opt) 
+    { 
+      case 'h': 
+        printf("Run UDFT Channelizer.\n\n");
+        printf("Arguments:\n");
+        printf("\td - Downsample integer\n");
+        printf("\tf - Filter order (full length is order * downsample + 1)\n");
+        printf("\tn - Number of total samples (multiple of downsamp)\n");
+        printf("\ts - Sample rate\n");
+        printf("\th - This help\n");
+        exit(EXIT_FAILURE);
+        break;
+      case 'd': 
+        downsamp = atoi(optarg);
+        break;
+      case 'f': 
+        filt_ord = atoi(optarg);
+        break; 
+      case 'n': 
+        full_ord = atoi(optarg);
+        break; 
+      case 's': 
+        samp_rate = atof(optarg);
+        break; 
+      case ':': 
+             printf("option needs a value\n"); 
+             break; 
+      case '?': 
+             printf("unknown option: %c\n", optopt);
+             break; 
+    } 
+  } 
+  int n_full = full_ord * downsamp;  // Total number of samples
+  int n_filt = filt_ord * downsamp + 1;
 
   int valid = channelizer(downsamp, n_full, n_filt, samp_rate);
 
