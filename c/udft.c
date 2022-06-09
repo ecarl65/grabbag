@@ -207,6 +207,7 @@ int main(int argc, char **argv) {
 
   if (!valid) {
     printf("Processing FAILED\n");
+    exit(EXIT_FAILURE);
   }
 }
 

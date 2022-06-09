@@ -96,7 +96,8 @@ void make_chirp(double* full_in, int Nfull, double Fs, double Tfull) {
 
   // Make input chirp
   for (int m = 0; m < Nfull; m++) {
-    full_in[m] = sin(2 * M_PI * (Fs / Tfull * pow(Ts * m, 2) / 2)) + coarse_gaussian() / 10.0;
+    // full_in[m] = sin(2 * M_PI * (Fs / Tfull * pow(Ts * m, 2) / 2)) + coarse_gaussian() / 10.0;
+    full_in[m] = sin(2 * M_PI * (Fs / Tfull * pow(Ts * m, 2) / 2));
   }
 }
 // }}}
