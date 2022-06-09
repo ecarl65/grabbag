@@ -22,7 +22,7 @@ struct fft_config {
 
 // {{{ write_out
 void write_out(char *file, void *addr, size_t size, size_t numels) {
-  FILE* fout = fopen(file, "wb");
+  FILE* fout = fopen(file, "ab");
   fwrite(addr, size, numels, fout);
   fclose(fout);
 }

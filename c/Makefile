@@ -1,7 +1,7 @@
 
 CC=gcc
-CFLAGS=-g -DDEBUG
-# CFLAGS=-g
+# CFLAGS=-g -DDEBUG
+CFLAGS=-g
 LIBS=-lm -lfftw3f -lfftw3
 
 all: test_fftw osconv dsconv poly udft ovudft
@@ -27,5 +27,5 @@ ovudft: ovudft.c
 .phony: clean
 
 clean:
-	rm -f test_fftw osconv dsconv poly udft ovudft
+	rm -f *.bin test_fftw osconv dsconv poly udft ovudft
 

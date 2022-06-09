@@ -24,12 +24,14 @@
 #include <string.h>
 #include "utils.h"
 
-int main(int argc, char **argv) {
-  const int downsamp = 8; // Downsample factor
+int channelizer(const int downsamp, const int n_full, const int n_filt, const double samp_rate) {
+  // Error checking on input
+  if ((n_filt - 1) % downsamp != 0) {
+    printf("Filter length should be a multiple of the downsample factor plus one\n");
+    return 0;
+  }
 
   // Buffer sizes
-  const int n_full = 256 * downsamp;  // Total number of samples
-  const int n_filt = 8 * downsamp + 1;
   const int n_buffer = (n_filt - 1) * 8;  // Size of the buffers
   const int n_cols = n_buffer / downsamp;
   const int n_cols_fft = ((n_buffer / downsamp) / 2 + 1);
@@ -44,7 +46,6 @@ int main(int argc, char **argv) {
   const int idx_out_valid_samp = idx_out_valid_r * n_rows_fft;
   const int n_in_valid = n_buffer - n_filt + 1;
   const int n_out_valid = n_in_valid / downsamp * n_rows_fft;
-  /* const int n_channel_delay = n_delay / downsamp * n_rows_fft; */
 
 #ifdef DEBUG
   printf("Downsample amount: %d\n", downsamp);
@@ -67,7 +68,6 @@ int main(int argc, char **argv) {
 #endif
   
   // Frequency and time constants
-  const double samp_rate = 10e3;
   const double samp_period = 1.0 / samp_rate;
   const double chirp_period = n_full * samp_period / 2;
   const double f_cutoff = samp_rate / (2 * downsamp);
@@ -127,17 +127,22 @@ int main(int argc, char **argv) {
                                            col_c.inembed, col_c.istride, col_c.idist, udft,
                                            col_c.onembed, col_c.ostride, col_c.odist, FFTW_ESTIMATE);
 
-  // TODO: this section will be in the loop
+
+  fftw_complex z[n_delay_samp];
+  for (size_t m = 0; m < n_delay_samp; m++) z[m] = 0;
+  write_out("channelized.bin", (void *) &z[0], sizeof(fftw_complex), n_delay_samp);
+
+  // TODO Move this to a function
   const int num_loops = (int) (n_full - n_cols * downsamp) / n_in_valid + 1;
+#ifdef DEBUG
   printf("Number of loops: %d\n", num_loops);
+#endif
   for (size_t idx = 0; idx < num_loops; idx++) {  // TODO Get right number of buffers
     int in_start = n_in_valid * idx;
-    /* int out_start = idx_out_valid_samp * idx * n_rows_fft; */
     int out_start = n_out_valid * idx;
 #ifdef DEBUG
     printf("Input index range: [%d, %d)\n", in_start, in_start + n_cols * downsamp);
 #endif
-    /* int in_start = n_fft_v * idx; */
 
     // Forward FFT of this buffer of data
     fftw_execute_dft_r2c(psig, &full_in[in_start], fft_in);
@@ -150,15 +155,15 @@ int main(int argc, char **argv) {
 
     fftw_execute(pudft);
 
-    // TODO Copy udft to output, or append to output file
     // Save only valid portion. Re-normalize inverse FFT.
-    /* for (int m = 0; m < n_fft_v; m++) { */
 #ifdef DEBUG
     printf("Copying from UDFT %d to output %d\n", idx_out_valid_samp, out_start + n_delay_samp);
 #endif
+    /* write_out("channelized.bin", (void *) &udft[idx_out_valid_samp], sizeof(fftw_complex), n_out_valid); */
     for (int m = 0; m < n_out_valid; m++) {
-      full_out[m + out_start + n_delay_samp] = udft[m + idx_out_valid_samp] * 4;  // Why 4 ? Downsamp/2?
+      full_out[m + out_start + n_delay_samp] = udft[m + idx_out_valid_samp] / n_cols;
     }
+    write_out("channelized.bin", (void *) &full_out[out_start + n_delay_samp], sizeof(fftw_complex), n_out_valid);
 
   } // End loop
 
@@ -167,7 +172,7 @@ int main(int argc, char **argv) {
   write_out("input.bin", (void *) &full_in[0], sizeof(double), n_full);
   write_out("filter.bin", (void *) &filt[0], sizeof(double), n_filt);
   write_out("onebuffer.bin", (void *) &udft[0], sizeof(fftw_complex), n_fft_v);
-  write_out("channelized.bin", (void *) &full_out[0], sizeof(fftw_complex), n_out);
+  /* write_out("channelized.bin", (void *) &full_out[0], sizeof(fftw_complex), n_out); */
   write_out("fftdata.bin", (void *) &fft_in[0], sizeof(fftw_complex), n_fft_h);
   write_out("fftfilt.bin", (void *) &fft_filt[0], sizeof(fftw_complex), n_fft_h);
 
@@ -186,6 +191,23 @@ int main(int argc, char **argv) {
   fftw_destroy_plan(pinv);
   fftw_destroy_plan(pudft);
   fftw_cleanup();
+
+  return 1;
+
+}
+
+int main(int argc, char **argv) {
+  // Values on which all others depend
+  const int downsamp = 8; // Downsample factor
+  const int n_full = 256 * downsamp;  // Total number of samples
+  const int n_filt = 8 * downsamp + 1;
+  const double samp_rate = 10e3;
+
+  int valid = channelizer(downsamp, n_full, n_filt, samp_rate);
+
+  if (!valid) {
+    printf("Processing FAILED\n");
+  }
 }
 
 

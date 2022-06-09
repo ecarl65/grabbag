@@ -1,5 +1,6 @@
 #!/bin/sh
 
-make udft
+make clean
+make CFLAGS='-g' udft
 ./udft
 ./plot_udft.py
