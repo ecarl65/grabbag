@@ -87,7 +87,6 @@ int channelizer(const int downsamp, const int n_full, const int n_filt, const do
   struct fft_config filt_c = { {n_cols}, 1, downsamp, n_cols, n_cols_fft, 1, 1, NULL, NULL };
   struct fft_config inv_c = { {n_cols}, 1, downsamp, n_cols_fft, n_cols, 1, 1, NULL, NULL };
   struct fft_config col_c = {
-    // {downsamp}, 1, n_cols, 1, 1, n_cols, n_cols, NULL, NULL       // Non-transposed
     {downsamp}, 1, n_cols, 1, n_rows_fft, n_cols, 1, NULL, NULL   // Transposed version - Makes overlap/save easier
   };
 
@@ -103,23 +102,17 @@ int channelizer(const int downsamp, const int n_full, const int n_filt, const do
   fftw_complex *fft_mult = fftw_alloc_complex(n_fft_h);
   fftw_complex *udft = fftw_alloc_complex(n_fft_v);
 
-  // Design filter and do polyphase decomposition
-  poly_filt_design(n_filt, f_cutoff, samp_rate, &filt[0], filt_full, n_cols, downsamp);
-
   // Make input chirp
   make_chirp(full_in, n_full, samp_rate, chirp_period);
+
+  // Design filter and do polyphase decomposition and FFT of filter
+  poly_filt_design(n_filt, f_cutoff, samp_rate, &filt[0], filt_full, n_cols, downsamp, filt_c, fft_filt);
 
   // Data polyphase FFT
   fftw_plan psig = fftw_plan_many_dft_r2c(fwd_c.rank, fwd_c.n_size, fwd_c.howmany, buffer_in,
                                           fwd_c.inembed, fwd_c.istride, fwd_c.idist, fft_in,
                                           fwd_c.onembed, fwd_c.ostride, fwd_c.odist, FFTW_ESTIMATE);
 
-  // Filter FFT
-  fftw_plan pfilt = fftw_plan_many_dft_r2c(filt_c.rank, filt_c.n_size, filt_c.howmany, filt_full,
-                                           filt_c.inembed, filt_c.istride, filt_c.idist, fft_filt,
-                                           filt_c.onembed, filt_c.ostride, filt_c.odist, FFTW_ESTIMATE);
-  fftw_execute(pfilt);
-  
   // IFFT plan for convolution
   fftw_plan pinv = fftw_plan_many_dft_c2r(inv_c.rank, inv_c.n_size, inv_c.howmany, fft_mult,
                                           inv_c.inembed, inv_c.istride, inv_c.idist, conv_out,
@@ -130,10 +123,9 @@ int channelizer(const int downsamp, const int n_full, const int n_filt, const do
                                            col_c.inembed, col_c.istride, col_c.idist, udft,
                                            col_c.onembed, col_c.ostride, col_c.odist, FFTW_ESTIMATE);
 
-
-  fftw_complex z[n_delay_samp];
-  for (size_t m = 0; m < n_delay_samp; m++) z[m] = 0;
-  write_out("channelized.bin", (void *) &z[0], sizeof(fftw_complex), n_delay_samp);
+  /* fftw_complex z[n_delay_samp]; */
+  /* for (size_t m = 0; m < n_delay_samp; m++) z[m] = 0; */
+  /* write_out("channelized.bin", (void *) &z[0], sizeof(fftw_complex), n_delay_samp); */
 
   // TODO Move this to a function
   const int num_loops = (int) (n_full - n_cols * downsamp) / n_in_valid + 1;
@@ -166,7 +158,7 @@ int channelizer(const int downsamp, const int n_full, const int n_filt, const do
     for (int m = 0; m < n_out_valid; m++) {
       full_out[m + out_start + n_delay_samp] = udft[m + idx_out_valid_samp] / n_cols;
     }
-    write_append("channelized.bin", (void *) &full_out[out_start + n_delay_samp], sizeof(fftw_complex), n_out_valid);
+    /* write_append("channelized.bin", (void *) &full_out[out_start + n_delay_samp], sizeof(fftw_complex), n_out_valid); */
 
   } // End loop
 
@@ -175,7 +167,7 @@ int channelizer(const int downsamp, const int n_full, const int n_filt, const do
   write_out("input.bin", (void *) &full_in[0], sizeof(double), n_full);
   write_out("filter.bin", (void *) &filt[0], sizeof(double), n_filt);
   write_out("onebuffer.bin", (void *) &udft[0], sizeof(fftw_complex), n_fft_v);
-  /* write_out("channelized.bin", (void *) &full_out[0], sizeof(fftw_complex), n_out); */
+  write_out("channelized.bin", (void *) &full_out[0], sizeof(fftw_complex), n_out);
   write_out("fftdata.bin", (void *) &fft_in[0], sizeof(fftw_complex), n_fft_h);
   write_out("fftfilt.bin", (void *) &fft_filt[0], sizeof(fftw_complex), n_fft_h);
 
@@ -189,7 +181,6 @@ int channelizer(const int downsamp, const int n_full, const int n_filt, const do
   fftw_free(fft_filt);
   fftw_free(conv_out);
   fftw_free(fft_mult);
-  fftw_destroy_plan(pfilt);
   fftw_destroy_plan(psig);
   fftw_destroy_plan(pinv);
   fftw_destroy_plan(pudft);

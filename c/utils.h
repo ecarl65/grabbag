@@ -3,6 +3,7 @@
 #include <tgmath.h>
 #include <string.h>
 #include <time.h>
+#include <fftw3.h>
 
 #define M_PI 3.14159265358979323846
 
@@ -60,7 +61,9 @@ double coarse_gaussian() {
 // }}}
 
 // {{{ poly_filt_design
-void poly_filt_design(int Nfilt, double fcutoff, double Fs, double* filt, double* filt_full, int ncols, int downsamp) {
+void poly_filt_design(int Nfilt, double fcutoff, double Fs, double* filt, double* filt_full, int ncols, int downsamp,
+                      const struct fft_config filt_cfg, fftw_complex* fft_filt) 
+{
   double Ts = 1 / Fs;
   const int Nfilt_half = (Nfilt - 1) >> 1;
 
@@ -95,6 +98,13 @@ void poly_filt_design(int Nfilt, double fcutoff, double Fs, double* filt, double
       outidx++;
     }
   }
+
+  // Filter FFT
+  fftw_plan pfilt = fftw_plan_many_dft_r2c(filt_cfg.rank, filt_cfg.n_size, filt_cfg.howmany, filt_full,
+                                           filt_cfg.inembed, filt_cfg.istride, filt_cfg.idist, fft_filt,
+                                           filt_cfg.onembed, filt_cfg.ostride, filt_cfg.odist, FFTW_ESTIMATE);
+  fftw_execute(pfilt);
+  fftw_destroy_plan(pfilt);
 }
 // }}} 
 
