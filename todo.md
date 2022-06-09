@@ -1,5 +1,5 @@
 # To Do
-- [ ] Get opt
+- [x] Get opt
 - [ ] Last buffer
 - [ ] Single float precision
 - [ ] Oversampled version
