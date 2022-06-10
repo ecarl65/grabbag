@@ -2,7 +2,7 @@
 CC=gcc
 # CFLAGS=-g -DDEBUG
 CFLAGS=-g
-LIBS=-lm -lfftw3f -lfftw3
+LIBS=-lm -lfftw3f -lfftw3 -lfftw3_omp -lfftw3f_omp
 
 all: test_fftw osconv dsconv poly udft ovudft fudft
 

@@ -2,7 +2,7 @@
 - [x] Get opt
 - [x] Last buffer
 - [x] Single float precision
-- [ ] OpenMP parallel FFTW
+- [x] OpenMP parallel FFTW
 - [ ] Oversampled version
 - [ ] Wisdom and preserve state/info
 - [ ] Better RNG and SNR calcs

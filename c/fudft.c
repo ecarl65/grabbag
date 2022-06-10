@@ -102,6 +102,8 @@ int channelizer(const int downsamp, const int n_full, const int n_filt, const fl
   fftwf_complex *fft_mult = fftwf_alloc_complex(n_fft_h);
   fftwf_complex *udft = fftwf_alloc_complex(n_fft_v);
 
+  for (size_t m = 0; m < n_delay_samp; m++) full_out[m] = 0;
+
   // Make input chirp
   make_chirp_f(full_in, n_full, samp_rate, chirp_period);
 
@@ -185,6 +187,7 @@ int channelizer(const int downsamp, const int n_full, const int n_filt, const fl
   fftwf_destroy_plan(psig);
   fftwf_destroy_plan(pinv);
   fftwf_destroy_plan(pudft);
+  fftw_cleanup_threads();
   fftwf_cleanup();
 
   return 1;
@@ -237,6 +240,11 @@ int main(int argc, char **argv) {
   } 
   int n_full = full_ord * downsamp;  // Total number of samples
   int n_filt = filt_ord * downsamp + 1;
+
+  // Set up threads
+  int init_threads = fftw_init_threads();
+  if (init_threads == 0) exit(EXIT_FAILURE);
+  fftw_plan_with_nthreads(downsamp);
 
   int valid = channelizer(downsamp, n_full, n_filt, samp_rate);
 
