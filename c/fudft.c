@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  udft.c
+ *       Filename:  fudft.c
  *
  *    Description:  Testing overlap/save with FFTW in C to get the basic right before
  *                  using in the channelizer.
@@ -29,15 +29,19 @@
 
 int channelizer(const int downsamp, const int n_full, const int n_filt, const float samp_rate) {
   // Error checking on input
-  if ((n_filt - 1) % downsamp != 0) {
-    printf("Filter length should be a multiple of the downsample factor plus one\n");
+  if ((n_filt - 1) % (2 * downsamp) != 0) {
+    printf("Filter length should be a multiple of 2x the downsample factor plus one\n");
+    return 0;
+  }
+  if (downsamp % 2 != 0) {
+    printf("Downsample should be an even amount\n");
     return 0;
   }
 
   // Buffer sizes
-  const int n_buffer = (n_filt - 1) * 8;  // Size of the buffers
+  const int n_buffer = (n_filt - 1) * 8;  // Size of the buffers, for now fix at 8x the filter size
   const int n_cols = n_buffer / downsamp;
-  const int n_cols_fft = ((n_buffer / downsamp) / 2 + 1);
+  const int n_cols_fft = (n_cols / 2 + 1);
   const int n_rows_fft = downsamp / 2 + 1;
   const int n_fft_h = n_cols_fft * downsamp;
   const int n_fft_v = n_rows_fft * n_cols;
@@ -49,6 +53,11 @@ int channelizer(const int downsamp, const int n_full, const int n_filt, const fl
   const int idx_out_valid_samp = idx_out_valid_r * n_rows_fft;
   const int n_in_valid = n_buffer - n_filt + 1;
   const int n_out_valid = n_in_valid / downsamp * n_rows_fft;
+
+  if (n_full < n_buffer) {
+    printf("Input array length should be larger than 8x filter length\n");
+    return 0;
+  }
 
 #ifdef DEBUG
   printf("Downsample amount: %d\n", downsamp);
