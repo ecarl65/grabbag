@@ -1,26 +1,16 @@
-CXX      = $(shell fltk-config --cxx)
-DEBUG    = -g
-CXXFLAGS = $(shell fltk-config --use-gl --use-images --cxxflags ) -I.
-LDFLAGS  = $(shell fltk-config --use-gl --use-images --ldflags ) -lstdc++
-LDSTATIC = $(shell fltk-config --use-gl --use-images --ldstaticflags )
-LINK     = $(CXX)
- 
 
-all: fltk_hello Button
+CXX=g++
+# CFLAGS=-g -DDEBUG
+CFLAGS=-g -std=c++11
+LIBS=-lm -lfftw3f -lfftw3 -lfftw3_omp -lfftw3f_omp
 
-fltk_hello: fltk_hello.o
-	$(CXX) $(CXXFLAGS) $(DEBUG) $< -o $@ $(LDFLAGS)
+all: fudft
 
-Button: Button.o
-	$(CXX) $(CXXFLAGS) $(DEBUG) $< -o $@ $(LDFLAGS)
+fudft: fudft.cc
+	$(CXX) -o $@ $< $(CFLAGS) $(LIBS)
 
-fltk_hello.o: fltk_hello.cc
-	$(CXX) $(CXXFLAGS) $(DEBUG) -c $<
+.phony: clean
 
-Button.o: Button.cc
-	$(CXX) $(CXXFLAGS) $(DEBUG) -c $<
- 
-clean: $(TARGET) $(OBJS)
-	rm -f *.o 2> /dev/null
-	rm -f $(TARGET) 2> /dev/null
+clean:
+	rm -f *.bin fudft
 
