@@ -1,6 +1,6 @@
 
 CXX=g++
-CXXFLAGS=-g -std=c++11 -Wall
+CXXFLAGS=-g -Ofast -std=c++11 -Wall -fopenmp
 LDFLAGS=-lm -lfftw3f -lfftw3 -lfftw3_omp -lfftw3f_omp
 
 all: run_udft
