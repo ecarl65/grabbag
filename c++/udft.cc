@@ -132,7 +132,7 @@ UDFT::UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write, bo
     printf("Cutoff frequency: %e\n", f_cutoff);
   }
 
-  // FFT parameters: n_size, rank, howmany, idist, odist, istride, ostride, inembed, onembed
+  // Forward FFT of the data
   fwd_c.n_size[0] = n_cols;
   fwd_c.rank = 1;
   fwd_c.howmany = downsamp;
@@ -143,6 +143,7 @@ UDFT::UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write, bo
   fwd_c.inembed = NULL;
   fwd_c.onembed = NULL;
 
+  // Fwd FFT of the polyphase filter
   filt_c.n_size[0] = n_cols;
   filt_c.rank = 1;
   filt_c.howmany = downsamp;
@@ -153,6 +154,7 @@ UDFT::UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write, bo
   filt_c.inembed = NULL;
   filt_c.onembed = NULL;
 
+  // Inverse FFT after multiplying the data and filter in the freq domain.
   inv_c.n_size[0] = n_cols;
   inv_c.rank = 1;
   inv_c.howmany = downsamp;
@@ -163,7 +165,8 @@ UDFT::UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write, bo
   inv_c.inembed = NULL;
   inv_c.onembed = NULL;
 
-  // Transpose
+  // Transpose output FFT that's across channels and does the modulating.
+  // The transpose makes it easier to skip the invalid samples and delayed samples.
   col_c.n_size[0] = downsamp;
   col_c.rank = 1;
   col_c.howmany = n_cols;
@@ -204,11 +207,10 @@ UDFT::UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write, bo
       reinterpret_cast<fftwf_complex*>(udft),
       col_c.onembed, col_c.ostride, col_c.odist, FFTW_MEASURE);
 
-
   // Design filter and do polyphase decomposition and FFT of filter
   poly_filt_design();
 
-  // Make input chirp
+  // Make input chirp signal
   make_chirp(full_in, n_full, samp_rate, chirp_period);
 
   // Initialize output
@@ -219,17 +221,19 @@ UDFT::UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write, bo
 
 // {{{ ~UDFT
 UDFT::~UDFT() {
-  // Free memory
+  // Free allocated arrays
   fftwf_free(full_in);
   fftwf_free(full_out);
-  fftwf_free(filt_full);
-  fftwf_free(buffer_in);
-  fftwf_free(udft);
-  fftwf_free(fft_in);
   fftwf_free(filt);
+  fftwf_free(buffer_in);
+  fftwf_free(filt_full);
+  fftwf_free(fft_in);
   fftwf_free(fft_filt);
   fftwf_free(conv_out);
   fftwf_free(fft_mult);
+  fftwf_free(udft);
+
+  // Do FFTW cleanup
   fftwf_destroy_plan(psig);
   fftwf_destroy_plan(pinv);
   fftwf_destroy_plan(pudft);
