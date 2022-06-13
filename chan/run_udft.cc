@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
   fftw_plan_with_nthreads(downsamp);
 
   // Set up channelizer
-  UDFT channelizer(downsamp, n_full, n_filt, samp_rate, write, debug);
+  UDFT channelizer(downsamp, n_filt, samp_rate, write, debug);
 
   // Set up input signal
   float *full_in = fftwf_alloc_real(n_full);
@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
 
   // Run and time result
   auto start = high_resolution_clock::now();
-  auto full_out = channelizer.run(full_in);
+  auto full_out = channelizer.run(full_in, n_full);
   auto duration = duration_cast<nanoseconds>(high_resolution_clock::now() - start);
   std::cout << "Elapsed time for run call: " << duration.count() * 1e-9 << " seconds" << std::endl;
 

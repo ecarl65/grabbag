@@ -70,8 +70,8 @@ void UDFT::poly_filt_design()
 } // }}}
 
 // {{{ UDFT
-UDFT::UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write, bool debug) : 
-  downsamp(downsamp), n_full(n_full), n_filt(n_filt), samp_rate(samp_rate), write(write), debug(debug) 
+UDFT::UDFT(int downsamp, int n_filt, float samp_rate, bool write, bool debug) : 
+  downsamp(downsamp), n_filt(n_filt), samp_rate(samp_rate), write(write), debug(debug) 
 {
   // Error checking on input
   if ((n_filt - 1) % (2 * downsamp) != 0) {
@@ -88,7 +88,6 @@ UDFT::UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write, bo
   n_rows_fft = downsamp / 2 + 1;
   n_fft_h = n_cols_fft * downsamp;
   n_fft_v = n_rows_fft * n_cols;
-  n_out = n_full / downsamp * n_rows_fft;
   n_delay = (n_filt - 1) >> 1;
   n_delay_r = n_delay / downsamp;
   n_delay_samp = n_delay_r * n_rows_fft;
@@ -102,13 +101,9 @@ UDFT::UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write, bo
   samp_period = 1.0 / samp_rate;
   f_cutoff = samp_rate / (2 * downsamp);
 
-  if (n_full < n_buffer) {
-    throw std::invalid_argument("Input array length should be larger than 8x filter length\n");
-  }
 
   if (debug) {
     printf("Downsample amount: %d\n", downsamp);
-    printf("Number of input samples: %d\n", n_full);
     printf("Filter length: %d\n", n_filt);
     printf("Size of buffer: %d\n", n_buffer);
     printf("Number of samples per output channel per buffer: %d\n", n_cols);
@@ -116,7 +111,6 @@ UDFT::UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write, bo
     printf("Number of output channels: %d\n", n_rows_fft);
     printf("Number of samples in FFT of data and filter: %d\n", n_fft_h);
     printf("Number of samples in modulating FFT across channels: %d\n", n_fft_v);
-    printf("Total number of output samples: %d\n", n_out);
     printf("Filter delay in samples at input rate: %d\n", n_delay);
     printf("Output row for zero group delay of filter: %d\n", n_delay_r);
     printf("Output sample for zero group delay of filter: %d\n", n_delay_samp);
@@ -231,10 +225,14 @@ UDFT::~UDFT() {
 // }}}
 
 // {{{ run
-std::vector<std::vector<std::complex<float>>> UDFT::run(float *indata)
+std::vector<std::vector<std::complex<float>>> UDFT::run(float *indata, int n_full)
 {
+  if (n_full < n_buffer) {
+    throw std::invalid_argument("Input array length should be larger than 8x filter length\n");
+  }
+
   // Initialize output
-  int n_out_rows = n_full / downsamp;
+  int n_out_rows = (n_full + downsamp - 1) / downsamp;
   int n_out_cols = n_rows_fft;
   std::vector<std::vector<std::complex<float>>> full_out(n_out_rows, std::vector<std::complex<float>> (n_out_cols));
   for (int m = 0; m < n_delay_r; m++) {
@@ -244,7 +242,7 @@ std::vector<std::vector<std::complex<float>>> UDFT::run(float *indata)
   }
 
   // Move this to a function
-  const int n_loops = (int) ceil((float) n_full / n_in_valid);
+  const int n_loops = (n_full + n_in_valid - 1) / n_in_valid;
   if (debug) printf("Number of loops: %d\n", n_loops);
   for (int idx = 0; idx < n_loops; idx++) {
     int in_start = n_in_valid * idx;
@@ -296,3 +294,29 @@ std::vector<std::vector<std::complex<float>>> UDFT::run(float *indata)
 }
 // }}}
 
+// // {{{ run(py::array)
+// py::array run(py::array indata)
+// {
+
+  // auto indata_obj_prop = indata.request();
+
+  // //initialize values
+  // double *in_vals = (double*) indata_obj_prop.ptr;
+
+  // unsigned int shape_1 = indata_obj_prop.shape[0];
+  // unsigned int shape_2 = indata_obj_prop.shape[1];
+
+  // std::vector<std::vector <double>> vect_arr( shape_1, std::vector<double> (shape_2));
+
+  // for(unsigned int i = 0; i < shape_1; i++){
+    // for(unsigned int j = 0; j < shape_2; j++){
+      // vect_arr[i][j] = vals[i*shape_2 + j] * 2;
+    // }
+  // }   
+
+  // py::array ret =  py::cast(vect_arr); //py::array(vect_arr.size(), vect_arr.data());
+  // return ret;
+
+
+// }
+// // }}}

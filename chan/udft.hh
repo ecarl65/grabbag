@@ -30,8 +30,15 @@
 
 class UDFT {
   public:
+
+    UDFT(int downsamp, int n_filt, float samp_rate, bool write = false, bool debug = true);
+    ~UDFT();
+    void poly_filt_design();
+    std::vector<std::vector<std::complex<float>>> run(float *indata, int n_full);
+    // py::array run(py::array indata);
+
     // Variables
-    int downsamp, n_full, n_filt;
+    int downsamp, n_filt;
     float samp_rate;
     int n_buffer, n_cols, n_cols_fft, n_rows_fft, n_fft_h, n_fft_v, n_out, n_delay, n_delay_r, n_delay_samp;
     int idx_out_valid_r, idx_out_valid_samp, n_in_valid, n_out_valid_r, n_out_valid_samp;
@@ -41,15 +48,5 @@ class UDFT {
     std::complex<float> *fft_in, *fft_filt, *fft_mult, *udft;
     fftwf_plan psig, pinv, pudft;
     bool write, debug;
-
-    void poly_filt_design();
-
-    UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write = false, bool debug = true);
-
-    ~UDFT();
-
-    std::vector<std::vector<std::complex<float>>> run(float *indata);
-    // py::array run(py::array indata);
-
 };
 
