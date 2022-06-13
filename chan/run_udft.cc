@@ -21,45 +21,37 @@
 #include <string>
 #include <chrono>
 #include <vector>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <unistd.h>
+#include <exception>
 #include <getopt.h>
-#include <time.h>
-#include <tgmath.h>
 #include <fftw3.h>
-#include <string.h>
 #include "udft.hh"
 
 using namespace std::chrono;
 
 // {{{ main
 int main(int argc, char **argv) {
-  // Values on which all others depend
-  int downsamp = 8; // Downsample factor
+  // Parse arguments, start with defaults.
+  int downsamp = 8;
   int filt_ord = 8;
   int full_ord = 8;
   float samp_rate = 10e3;
   bool debug = false;
   bool write = false;
-
-  // put ':' in the starting of the string so that program can distinguish between '?' and ':' 
   int opt;
   while((opt = getopt(argc, argv, ":d:f::n::s::h::vw")) != -1) 
   { 
     switch(opt) 
     { 
       case 'h': 
-        printf("Run UDFT Channelizer.\n\n");
-        printf("Arguments:\n");
-        printf("\td - Downsample integer\n");
-        printf("\tf - Filter order (full length is order * downsample + 1)\n");
-        printf("\tn - Number of total samples (power of two, which is multiplied by downsamp)\n");
-        printf("\ts - Sample rate\n");
-        printf("\tv - Verbose output\n");
-        printf("\tw - Write output files\n");
-        printf("\th - This help\n");
+        std::cout << "Run UDFT Channelizer.\n\n";
+        std::cout << "Arguments:\n";
+        std::cout << "\td - Downsample integer\n";
+        std::cout << "\tf - Filter order (full length is order * downsample + 1)\n";
+        std::cout << "\tn - Number of total samples (power of two, which is multiplied by downsamp)\n";
+        std::cout << "\ts - Sample rate\n";
+        std::cout << "\tv - Verbose output\n";
+        std::cout << "\tw - Write output files\n";
+        std::cout << "\th - This help\n";
         exit(EXIT_FAILURE);
         break;
       case 'd': 
@@ -81,10 +73,10 @@ int main(int argc, char **argv) {
         samp_rate = atof(optarg);
         break; 
       case ':': 
-             printf("option needs a value\n"); 
+             std::cout << "option needs a value\n"; 
              break; 
       case '?': 
-             printf("unknown option: %c\n", optopt);
+             std::cout << "unknown option: " << optopt << std::endl;
              break; 
     } 
   } 
@@ -93,7 +85,7 @@ int main(int argc, char **argv) {
 
   // Set up threads
   int init_threads = fftw_init_threads();
-  if (init_threads == 0) exit(EXIT_FAILURE);
+  if (init_threads == 0) throw std::runtime_error("Could not init FFTW threads\n");
   fftw_plan_with_nthreads(downsamp);
 
   // Set up channelizer
@@ -101,15 +93,15 @@ int main(int argc, char **argv) {
 
   // Set up input signal
   std::vector<float> full_in(n_full);
-  float chirp_period = n_full / samp_rate / 2;
-  make_chirp(&full_in[0], n_full, samp_rate, chirp_period);
+  float chirp_period = n_full / samp_rate / 2; // This many *full* cycles of chirp
+  make_chirp(full_in, samp_rate, chirp_period);
 
-  // Run 
+  // Run and time result
   auto start = high_resolution_clock::now();
   channelizer.run(&full_in[0]);
   auto stop = high_resolution_clock::now();
-  auto duration = duration_cast<microseconds>(stop - start);
-  std::cout << "Elapsed time for run call: " << duration.count() * 1e-6 << " seconds" << std::endl;
+  auto duration = duration_cast<nanoseconds>(stop - start);
+  std::cout << "Elapsed time for run call: " << duration.count() * 1e-9 << " seconds" << std::endl;
 
 }
 // }}}

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <complex>
 #include <string>
+#include <vector>
 #include <stdlib.h>
 #include <stdint.h>
 #include <tgmath.h>
@@ -42,11 +43,11 @@ inline void write_append(std::string file, void *addr, size_t size, size_t numel
 
 // {{{ make_chirp
 template <class T>
-inline void make_chirp(T* full_in, int Nfull, T Fs, T Tfull) {
+inline void make_chirp(std::vector<T> &full_in, T Fs, T Tfull) {
   T Ts = 1 / Fs;
 
   // Make input chirp
-  for (int m = 0; m < Nfull; m++) {
+  for (size_t m = 0; m < full_in.size(); m++) {
     full_in[m] = sin(2 * M_PI * (Fs / Tfull * pow(Ts * m, 2) / 2));
   }
 }
