@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  fudft.c
+ *       Filename:  udft.cc
  *
  *    Description:  Testing overlap/save with FFTW in C to get the basic right before
  *                  using in the channelizer.
@@ -29,7 +29,7 @@
 #include <tgmath.h>
 #include <fftw3.h>
 #include <string.h>
-#include "fudft.hh"
+#include "udft.hh"
 
 using namespace std::chrono;
 

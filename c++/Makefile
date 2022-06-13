@@ -4,13 +4,13 @@ CXX=g++
 CFLAGS=-g -std=c++11
 LIBS=-lm -lfftw3f -lfftw3 -lfftw3_omp -lfftw3f_omp
 
-all: fudft
+all: udft
 
-fudft: fudft.cc fudft.hh utils.hh
+udft: udft.cc udft.hh utils.hh
 	$(CXX) -o $@ $< $(CFLAGS) $(LIBS)
 
 .phony: clean
 
 clean:
-	rm -f *.bin fudft
+	rm -f *.bin udft
 

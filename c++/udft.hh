@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  fudft.hh
+ *       Filename:  udft.hh
  *
  *    Description:  Header file for Floating Point UDFT
  *
