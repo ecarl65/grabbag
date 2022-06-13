@@ -4,10 +4,10 @@
 - [x] Single float precision
 - [x] OpenMP parallel FFTW
 - [ ] pybind11 or Cython or CFFI interface, with persistent classes
-- [ ] C++11 version with templatization and overloading
-- [ ] Wisdom and preserve state/info
+- [x] C++11 version with templatization and overloading
+- [x] Wisdom and preserve state/info
 - [ ] Oversampled version
 - [ ] Better RNG and SNR calcs
-- [ ] Timing
+- [x] Timing
 - [ ] ~Bluefile? (no, this will be called from python)~
 - [ ] ~Streaming? (output buffers at a time somehow)~

@@ -19,6 +19,7 @@
 #include <iostream>
 #include <complex>
 #include <string>
+#include <chrono>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -30,6 +31,8 @@
 #include <string.h>
 #include "fudft.hh"
 
+using namespace std::chrono;
+
 // {{{ main
 int main(int argc, char **argv) {
   // Values on which all others depend
@@ -38,11 +41,12 @@ int main(int argc, char **argv) {
   int full_ord = 256;
   float samp_rate = 10e3;
   bool debug = false;
+  bool write = false;
 
   int opt;
 
   // put ':' in the starting of the string so that program can distinguish between '?' and ':' 
-  while((opt = getopt(argc, argv, ":d:f::n::s::h::v")) != -1) 
+  while((opt = getopt(argc, argv, ":d:f::n::s::h::vw")) != -1) 
   { 
     switch(opt) 
     { 
@@ -54,6 +58,7 @@ int main(int argc, char **argv) {
         printf("\tn - Number of total samples (multiple of downsamp)\n");
         printf("\ts - Sample rate\n");
         printf("\tv - Verbose output\n");
+        printf("\tw - Write output files\n");
         printf("\th - This help\n");
         exit(EXIT_FAILURE);
         break;
@@ -62,6 +67,9 @@ int main(int argc, char **argv) {
         break;
       case 'v': 
         debug = true;
+        break;
+      case 'w': 
+        write = true;
         break;
       case 'f': 
         filt_ord = atoi(optarg);
@@ -88,13 +96,12 @@ int main(int argc, char **argv) {
   if (init_threads == 0) exit(EXIT_FAILURE);
   fftw_plan_with_nthreads(downsamp);
 
-  UDFT<float> channelizer(downsamp, n_full, n_filt, samp_rate, debug);
-  // int valid = channelizer(downsamp, n_full, n_filt, samp_rate);
+  UDFT<float> channelizer(downsamp, n_full, n_filt, samp_rate, write, debug);
+  auto start = high_resolution_clock::now();
   channelizer.run();
+  auto stop = high_resolution_clock::now();
+  auto duration = duration_cast<microseconds>(stop - start);
+  std::cout << duration.count() << std::endl;
 
-  // if (!valid) {
-    // printf("Processing FAILED\n");
-    // exit(EXIT_FAILURE);
-  // }
 }
 // }}}

@@ -34,7 +34,7 @@ class UDFT {
     T *full_in, *filt, *buffer_in, *filt_full, *conv_out;
     std::complex<T> *full_out, *fft_in, *fft_filt, *fft_mult, *udft;
     fftwf_plan psig, pinv, pudft;
-    bool debug;
+    bool debug, write;
 
     // {{{ poly_filt_design
     inline void poly_filt_design()
@@ -83,8 +83,8 @@ class UDFT {
     } // }}}
 
     // {{{ UDFT
-    UDFT(int downsamp, int n_full, int n_filt, T samp_rate, bool debug = true) : 
-      downsamp(downsamp), n_full(n_full), n_filt(n_filt), samp_rate(samp_rate) {
+    UDFT(int downsamp, int n_full, int n_filt, T samp_rate, bool write = false, bool debug = true) : 
+      downsamp(downsamp), n_full(n_full), n_filt(n_filt), samp_rate(samp_rate), write(write), debug(debug) {
         // Error checking on input
         if ((n_filt - 1) % (2 * downsamp) != 0) {
           throw std::invalid_argument("Filter length should be a multiple of 2x the downsample factor plus one\n");
