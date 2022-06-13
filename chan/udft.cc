@@ -294,29 +294,22 @@ std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
 }
 // }}}
 
-// // {{{ run(py::array)
-// py::array run(py::array indata)
-// {
+// {{{ run(py::array)
+py::array UDFT::run(py::array indata)
+{
 
-  // auto indata_obj_prop = indata.request();
+  auto indata_obj_prop = indata.request();
 
-  // //initialize values
-  // double *in_vals = (double*) indata_obj_prop.ptr;
+  //initialize values
+  float *in_vals = (float*) indata_obj_prop.ptr;
 
-  // unsigned int shape_1 = indata_obj_prop.shape[0];
-  // unsigned int shape_2 = indata_obj_prop.shape[1];
+  int n_full = static_cast<int>(indata_obj_prop.shape[0]);
 
-  // std::vector<std::vector <double>> vect_arr( shape_1, std::vector<double> (shape_2));
+  auto output = run(in_vals, n_full);
 
-  // for(unsigned int i = 0; i < shape_1; i++){
-    // for(unsigned int j = 0; j < shape_2; j++){
-      // vect_arr[i][j] = vals[i*shape_2 + j] * 2;
-    // }
-  // }   
-
-  // py::array ret =  py::cast(vect_arr); //py::array(vect_arr.size(), vect_arr.data());
-  // return ret;
+  py::array ret =  py::cast(output); //py::array(vect_arr.size(), vect_arr.data());
+  return ret;
 
 
-// }
-// // }}}
+}
+// }}}
