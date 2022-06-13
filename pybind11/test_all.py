@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
+import numpy as np
 import pet
 import iteration_mod as i_mod
-import numpy as np
 import example
 
-a = np.random.normal(0, 1, (3, 4))
+a = np.random.normal(0, 1, (3, 4)).astype('f')
 print("")
 print("Testing 'pet':")
 print("--------------")
@@ -44,4 +44,3 @@ print(example.add2(10, 20))
 print(example.add2(j=20))
 print(example.add2(i=20))
 print("")
-
