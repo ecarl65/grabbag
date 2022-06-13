@@ -28,9 +28,9 @@ class UDFT {
     float samp_rate;
     int n_buffer, n_cols, n_cols_fft, n_rows_fft, n_fft_h, n_fft_v, n_out, n_delay, n_delay_r, n_delay_samp;
     int idx_out_valid_r, idx_out_valid_samp, n_in_valid, n_out_valid;
-    float samp_period, chirp_period, f_cutoff;
+    float samp_period, f_cutoff;
     struct fft_config fwd_c, filt_c, inv_c, col_c;
-    float *full_in, *filt, *buffer_in, *filt_full, *conv_out;
+    float *filt, *buffer_in, *filt_full, *conv_out;
     std::complex<float> *full_out, *fft_in, *fft_filt, *fft_mult, *udft;
     fftwf_plan psig, pinv, pudft;
     bool write, debug;
@@ -41,7 +41,7 @@ class UDFT {
 
     ~UDFT();
 
-    void run();
+    void run(float *indata);
 
 };
 

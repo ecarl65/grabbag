@@ -20,6 +20,7 @@
 #include <complex>
 #include <string>
 #include <chrono>
+#include <vector>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -43,9 +44,8 @@ int main(int argc, char **argv) {
   bool debug = false;
   bool write = false;
 
-  int opt;
-
   // put ':' in the starting of the string so that program can distinguish between '?' and ':' 
+  int opt;
   while((opt = getopt(argc, argv, ":d:f::n::s::h::vw")) != -1) 
   { 
     switch(opt) 
@@ -96,9 +96,17 @@ int main(int argc, char **argv) {
   if (init_threads == 0) exit(EXIT_FAILURE);
   fftw_plan_with_nthreads(downsamp);
 
+  // Set up channelizer
   UDFT channelizer(downsamp, n_full, n_filt, samp_rate, write, debug);
+
+  // Set up input signal
+  std::vector<float> full_in(n_full);
+  float chirp_period = n_full / samp_rate / 2;
+  make_chirp(&full_in[0], n_full, samp_rate, chirp_period);
+
+  // Run 
   auto start = high_resolution_clock::now();
-  channelizer.run();
+  channelizer.run(&full_in[0]);
   auto stop = high_resolution_clock::now();
   auto duration = duration_cast<microseconds>(stop - start);
   std::cout << "Elapsed time for run call: " << duration.count() * 1e-6 << " seconds" << std::endl;

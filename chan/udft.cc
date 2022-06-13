@@ -96,6 +96,10 @@ UDFT::UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write, bo
   n_in_valid = n_buffer - n_filt + 1;
   n_out_valid = n_in_valid / downsamp * n_rows_fft;
 
+  // Frequency and time constants
+  samp_period = 1.0 / samp_rate;
+  f_cutoff = samp_rate / (2 * downsamp);
+
   if (n_full < n_buffer) {
     throw std::invalid_argument("Input array length should be larger than 8x filter length\n");
   }
@@ -118,17 +122,8 @@ UDFT::UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write, bo
     printf("Output sample of valid overlap/save data: %d\n", idx_out_valid_samp);
     printf("Number of valid input samples per buffer: %d\n", n_in_valid);
     printf("Number of valid output samples per buffer: %d\n", n_out_valid);
-  }
-
-  // Frequency and time constants
-  samp_period = 1.0 / samp_rate;
-  chirp_period = n_full * samp_period / 2;
-  f_cutoff = samp_rate / (2 * downsamp);
-
-  if (debug) {
     printf("Sample rate: %e\n", samp_rate);
     printf("Sample period: %e\n", samp_period);
-    printf("Chirp period: %e\n", chirp_period);
     printf("Cutoff frequency: %e\n", f_cutoff);
   }
 
@@ -178,7 +173,6 @@ UDFT::UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write, bo
   col_c.onembed = NULL;
 
   // Arrays
-  full_in = fftwf_alloc_real(n_full);
   full_out = reinterpret_cast<std::complex<float>*>(fftwf_alloc_complex(n_out));
   filt = fftwf_alloc_real(n_filt);
   buffer_in = fftwf_alloc_real(n_buffer);
@@ -210,9 +204,6 @@ UDFT::UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write, bo
   // Design filter and do polyphase decomposition and FFT of filter
   poly_filt_design();
 
-  // Make input chirp signal
-  make_chirp(full_in, n_full, samp_rate, chirp_period);
-
   // Initialize output
   for (int m = 0; m < n_delay_samp; m++) full_out[m] = 0;
 
@@ -222,7 +213,6 @@ UDFT::UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write, bo
 // {{{ ~UDFT
 UDFT::~UDFT() {
   // Free allocated arrays
-  fftwf_free(full_in);
   fftwf_free(full_out);
   fftwf_free(filt);
   fftwf_free(buffer_in);
@@ -243,7 +233,7 @@ UDFT::~UDFT() {
 // }}}
 
 // {{{ run
-void UDFT::run()
+void UDFT::run(float *indata)
 {
   // Move this to a function
   const int n_loops = (int) ceil((float) n_full / n_in_valid);
@@ -255,11 +245,11 @@ void UDFT::run()
 
     // Forward FFT of this buffer of data. If last buffer do zero padding.
     if (n_full - in_start < n_buffer) {
-      for (int m = 0; m < n_full - in_start; m++) buffer_in[m] = full_in[in_start + m];
+      for (int m = 0; m < n_full - in_start; m++) buffer_in[m] = indata[in_start + m];
       for (int m = n_full - in_start; m < n_buffer; m++) buffer_in[m] = 0;
       fftwf_execute_dft_r2c(psig, buffer_in, reinterpret_cast<fftwf_complex*>(fft_in));
     } else {
-      fftwf_execute_dft_r2c(psig, &full_in[in_start], reinterpret_cast<fftwf_complex*>(fft_in));
+      fftwf_execute_dft_r2c(psig, &indata[in_start], reinterpret_cast<fftwf_complex*>(fft_in));
     }
 
     // Compute circular convolution through multiplying in frequency domain.
@@ -282,7 +272,7 @@ void UDFT::run()
   // Write outputs
   if (write) {
     write_out("filtered.bin", (void *) &conv_out[0], sizeof(float), n_buffer);
-    write_out("input.bin", (void *) &full_in[0], sizeof(float), n_full);
+    write_out("input.bin", (void *) &indata[0], sizeof(float), n_full);
     write_out("filter.bin", (void *) &filt[0], sizeof(float), n_filt);
     write_out("onebuffer.bin", (void *) &udft[0], sizeof(fftwf_complex), n_fft_v);
     write_out("channelized.bin", (void *) &full_out[0], sizeof(fftwf_complex), n_out);
