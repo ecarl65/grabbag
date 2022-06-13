@@ -97,9 +97,8 @@ int main(int argc, char **argv) {
 
   // Run and time result
   auto start = high_resolution_clock::now();
-  channelizer.run(&full_in[0]);
-  auto stop = high_resolution_clock::now();
-  auto duration = duration_cast<nanoseconds>(stop - start);
+  channelizer.run(full_in);
+  auto duration = duration_cast<nanoseconds>(high_resolution_clock::now() - start);
   std::cout << "Elapsed time for run call: " << duration.count() * 1e-9 << " seconds" << std::endl;
 
   fftwf_free(full_in);
