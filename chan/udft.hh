@@ -17,9 +17,16 @@
  */
 #include <iostream>
 #include <complex>
+#include <vector>
 #include <fftw3.h>
 #include <stdexcept>
+// #include <pybind11/pybind11.h>
+// #include <pybind11/numpy.h>
+// #include <pybind11/stl.h>
+// #include <Python.h>
 #include "utils.hh"
+
+// namespace py = pybind11;
 
 class UDFT {
   public:
@@ -27,11 +34,11 @@ class UDFT {
     int downsamp, n_full, n_filt;
     float samp_rate;
     int n_buffer, n_cols, n_cols_fft, n_rows_fft, n_fft_h, n_fft_v, n_out, n_delay, n_delay_r, n_delay_samp;
-    int idx_out_valid_r, idx_out_valid_samp, n_in_valid, n_out_valid;
+    int idx_out_valid_r, idx_out_valid_samp, n_in_valid, n_out_valid_r, n_out_valid_samp;
     float samp_period, f_cutoff;
     struct fft_config fwd_c, filt_c, inv_c, col_c;
     float *filt, *buffer_in, *filt_full, *conv_out;
-    std::complex<float> *full_out, *fft_in, *fft_filt, *fft_mult, *udft;
+    std::complex<float> *fft_in, *fft_filt, *fft_mult, *udft;
     fftwf_plan psig, pinv, pudft;
     bool write, debug;
 
@@ -41,7 +48,8 @@ class UDFT {
 
     ~UDFT();
 
-    void run(float *indata);
+    std::vector<std::vector<std::complex<float>>> run(float *indata);
+    // py::array run(py::array indata);
 
 };
 

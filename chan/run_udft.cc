@@ -97,10 +97,19 @@ int main(int argc, char **argv) {
 
   // Run and time result
   auto start = high_resolution_clock::now();
-  channelizer.run(full_in);
+  auto full_out = channelizer.run(full_in);
   auto duration = duration_cast<nanoseconds>(high_resolution_clock::now() - start);
   std::cout << "Elapsed time for run call: " << duration.count() * 1e-9 << " seconds" << std::endl;
 
+  std::cout << "First 10 output rows\n";
+  for (size_t m = 0; m < 10; m++) {
+    for (size_t n = 0; n < full_out[m].size(); n++) {
+      std::cout << full_out[m][n] << ", ";
+    }
+    std::cout << "\n";
+  }
+
   fftwf_free(full_in);
+  // fftwf_free(full_out);
 }
 // }}}
