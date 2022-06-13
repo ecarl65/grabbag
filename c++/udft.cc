@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
   channelizer.run();
   auto stop = high_resolution_clock::now();
   auto duration = duration_cast<microseconds>(stop - start);
-  std::cout << duration.count() << std::endl;
+  std::cout << "Elapsed time for run call: " << duration.count() * 1e-6 << " seconds" << std::endl;
 
 }
 // }}}

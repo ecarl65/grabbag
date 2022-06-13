@@ -77,7 +77,7 @@ class UDFT {
       // Filter FFT
       fftwf_plan pfilt = fftwf_plan_many_dft_r2c(filt_c.rank, filt_c.n_size, filt_c.howmany, filt_full,
           filt_c.inembed, filt_c.istride, filt_c.idist, (fftwf_complex *) fft_filt,
-          filt_c.onembed, filt_c.ostride, filt_c.odist, FFTW_ESTIMATE);
+          filt_c.onembed, filt_c.ostride, filt_c.odist, FFTW_MEASURE);
       fftwf_execute(pfilt);
       fftwf_destroy_plan(pfilt);
     } // }}}
@@ -211,19 +211,19 @@ class UDFT {
         psig = fftwf_plan_many_dft_r2c(fwd_c.rank, fwd_c.n_size, fwd_c.howmany, buffer_in,
             fwd_c.inembed, fwd_c.istride, fwd_c.idist,
             reinterpret_cast<fftwf_complex*>(fft_in),
-            fwd_c.onembed, fwd_c.ostride, fwd_c.odist, FFTW_ESTIMATE);
+            fwd_c.onembed, fwd_c.ostride, fwd_c.odist, FFTW_MEASURE);
 
         // IFFT plan for convolution
         pinv = fftwf_plan_many_dft_c2r(inv_c.rank, inv_c.n_size, inv_c.howmany,
             reinterpret_cast<fftwf_complex*>(fft_mult),
             inv_c.inembed, inv_c.istride, inv_c.idist, conv_out,
-            inv_c.onembed, inv_c.ostride, inv_c.odist, FFTW_ESTIMATE);
+            inv_c.onembed, inv_c.ostride, inv_c.odist, FFTW_MEASURE);
 
         // Perform FFT down columns to get channelized output. Output may be transposed.
         pudft = fftwf_plan_many_dft_r2c(col_c.rank, col_c.n_size, col_c.howmany, conv_out,
             col_c.inembed, col_c.istride, col_c.idist,
             reinterpret_cast<fftwf_complex*>(udft),
-            col_c.onembed, col_c.ostride, col_c.odist, FFTW_ESTIMATE);
+            col_c.onembed, col_c.ostride, col_c.odist, FFTW_MEASURE);
       }
     // }}}
 
