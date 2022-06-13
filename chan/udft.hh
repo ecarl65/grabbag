@@ -28,13 +28,15 @@
 
 // namespace py = pybind11;
 
+using cfloat = std::complex<float>;
+
 class UDFT {
   public:
 
     UDFT(int downsamp, int n_filt, float samp_rate, bool write = false, bool debug = true);
     ~UDFT();
     void poly_filt_design();
-    std::vector<std::vector<std::complex<float>>> run(float *indata, int n_full);
+    std::vector<std::vector<cfloat>> run(float *indata, int n_full);
     // py::array run(py::array indata);
 
     // Variables
@@ -45,7 +47,7 @@ class UDFT {
     float samp_period, f_cutoff;
     struct fft_config fwd_c, filt_c, inv_c, col_c;
     float *filt, *buffer_in, *filt_full, *conv_out;
-    std::complex<float> *fft_in, *fft_filt, *fft_mult, *udft;
+    cfloat *fft_in, *fft_filt, *fft_mult, *udft;
     fftwf_plan psig, pinv, pudft;
     bool write, debug;
 };

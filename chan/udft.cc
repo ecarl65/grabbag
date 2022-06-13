@@ -173,11 +173,11 @@ UDFT::UDFT(int downsamp, int n_filt, float samp_rate, bool write, bool debug) :
   filt = fftwf_alloc_real(n_filt);
   buffer_in = fftwf_alloc_real(n_buffer);
   filt_full = fftwf_alloc_real(n_buffer);
-  fft_in = reinterpret_cast<std::complex<float>*>(fftwf_alloc_complex(n_fft_h));
-  fft_filt = reinterpret_cast<std::complex<float>*>(fftwf_alloc_complex(n_fft_h));
+  fft_in = reinterpret_cast<cfloat*>(fftwf_alloc_complex(n_fft_h));
+  fft_filt = reinterpret_cast<cfloat*>(fftwf_alloc_complex(n_fft_h));
   conv_out = fftwf_alloc_real(n_buffer);
-  fft_mult = reinterpret_cast<std::complex<float>*>(fftwf_alloc_complex(n_fft_h));
-  udft = reinterpret_cast<std::complex<float>*>(fftwf_alloc_complex(n_fft_v));
+  fft_mult = reinterpret_cast<cfloat*>(fftwf_alloc_complex(n_fft_h));
+  udft = reinterpret_cast<cfloat*>(fftwf_alloc_complex(n_fft_v));
 
   // Data polyphase FFT
   psig = fftwf_plan_many_dft_r2c(fwd_c.rank, fwd_c.n_size, fwd_c.howmany, buffer_in,
@@ -225,7 +225,7 @@ UDFT::~UDFT() {
 // }}}
 
 // {{{ run
-std::vector<std::vector<std::complex<float>>> UDFT::run(float *indata, int n_full)
+std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
 {
   if (n_full < n_buffer) {
     throw std::invalid_argument("Input array length should be larger than 8x filter length\n");
@@ -234,7 +234,7 @@ std::vector<std::vector<std::complex<float>>> UDFT::run(float *indata, int n_ful
   // Initialize output
   int n_out_rows = (n_full + downsamp - 1) / downsamp;
   int n_out_cols = n_rows_fft;
-  std::vector<std::vector<std::complex<float>>> full_out(n_out_rows, std::vector<std::complex<float>> (n_out_cols));
+  std::vector<std::vector<cfloat>> full_out(n_out_rows, std::vector<cfloat> (n_out_cols));
   for (int m = 0; m < n_delay_r; m++) {
     for (int n = 0; n < n_out_cols; n++) {
       full_out[m][n] = 0;
