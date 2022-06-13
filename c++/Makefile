@@ -1,22 +1,26 @@
+CXX      = $(shell fltk-config --cxx)
+DEBUG    = -g
+CXXFLAGS = $(shell fltk-config --use-gl --use-images --cxxflags ) -I.
+LDFLAGS  = $(shell fltk-config --use-gl --use-images --ldflags ) -lstdc++
+LDSTATIC = $(shell fltk-config --use-gl --use-images --ldstaticflags )
+LINK     = $(CXX)
+ 
 
-CXX=g++
-CXXFLAGS=-g -std=c++11 -Wall
-LDFLAGS=-lm -lfftw3f -lfftw3 -lfftw3_omp -lfftw3f_omp
+all: fltk_hello Button
 
-all: run_udft
+fltk_hello: fltk_hello.o
+	$(CXX) $(CXXFLAGS) $(DEBUG) $< -o $@ $(LDFLAGS)
 
-run_udft: run_udft.o udft.o
-	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+Button: Button.o
+	$(CXX) $(CXXFLAGS) $(DEBUG) $< -o $@ $(LDFLAGS)
 
-run_udft.o: run_udft.cc udft.o
-	$(CXX) $(CXXFLAGS) -c $<
+fltk_hello.o: fltk_hello.cc
+	$(CXX) $(CXXFLAGS) $(DEBUG) -c $<
 
-udft.o: udft.cc udft.hh utils.hh
-	# $(CXX) -o $@ $< $(CXXFLAGS) $(LDFLAGS)
-	$(CXX) $(CXXFLAGS) -c $<
-
-.phony: clean
-
-clean:
-	rm -f *.bin *.o run_udft
+Button.o: Button.cc
+	$(CXX) $(CXXFLAGS) $(DEBUG) -c $<
+ 
+clean: $(TARGET) $(OBJS)
+	rm -f *.o 2> /dev/null
+	rm -f $(TARGET) 2> /dev/null
 
