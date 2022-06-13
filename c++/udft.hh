@@ -291,13 +291,15 @@ class UDFT {
       } // End loop
 
       // Write outputs
-      write_out("filtered.bin", (void *) &conv_out[0], sizeof(T), n_buffer);
-      write_out("input.bin", (void *) &full_in[0], sizeof(T), n_full);
-      write_out("filter.bin", (void *) &filt[0], sizeof(T), n_filt);
-      write_out("onebuffer.bin", (void *) &udft[0], sizeof(fftwf_complex), n_fft_v);
-      write_out("channelized.bin", (void *) &full_out[0], sizeof(fftwf_complex), n_out);
-      write_out("fftdata.bin", (void *) &fft_in[0], sizeof(fftwf_complex), n_fft_h);
-      write_out("fftfilt.bin", (void *) &fft_filt[0], sizeof(fftwf_complex), n_fft_h);
+      if (write) {
+        write_out("filtered.bin", (void *) &conv_out[0], sizeof(T), n_buffer);
+        write_out("input.bin", (void *) &full_in[0], sizeof(T), n_full);
+        write_out("filter.bin", (void *) &filt[0], sizeof(T), n_filt);
+        write_out("onebuffer.bin", (void *) &udft[0], sizeof(fftwf_complex), n_fft_v);
+        write_out("channelized.bin", (void *) &full_out[0], sizeof(fftwf_complex), n_out);
+        write_out("fftdata.bin", (void *) &fft_in[0], sizeof(fftwf_complex), n_fft_h);
+        write_out("fftfilt.bin", (void *) &fft_filt[0], sizeof(fftwf_complex), n_fft_h);
+      }
     }
     // }}}
 
