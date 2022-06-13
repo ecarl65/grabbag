@@ -212,7 +212,7 @@ UDFT::UDFT(int downsamp, int n_full, int n_filt, float samp_rate, bool write, bo
   make_chirp(full_in, n_full, samp_rate, chirp_period);
 
   // Initialize output
-  for (size_t m = 0; m < n_delay_samp; m++) full_out[m] = 0;
+  for (int m = 0; m < n_delay_samp; m++) full_out[m] = 0;
 
 }
 // }}}
@@ -244,15 +244,15 @@ void UDFT::run()
   // Move this to a function
   const int n_loops = (int) ceil((float) n_full / n_in_valid);
   if (debug) printf("Number of loops: %d\n", n_loops);
-  for (size_t idx = 0; idx < n_loops; idx++) {
+  for (int idx = 0; idx < n_loops; idx++) {
     int in_start = n_in_valid * idx;
     int out_start = n_out_valid * idx;
     if (debug) printf("Input index range: [%d, %d)\n", in_start, in_start + n_cols * downsamp);
 
     // Forward FFT of this buffer of data. If last buffer do zero padding.
     if (n_full - in_start < n_buffer) {
-      for (size_t m = 0; m < n_full - in_start; m++) buffer_in[m] = full_in[in_start + m];
-      for (size_t m = n_full - in_start; m < n_buffer; m++) buffer_in[m] = 0;
+      for (int m = 0; m < n_full - in_start; m++) buffer_in[m] = full_in[in_start + m];
+      for (int m = n_full - in_start; m < n_buffer; m++) buffer_in[m] = 0;
       fftwf_execute_dft_r2c(psig, buffer_in, reinterpret_cast<fftwf_complex*>(fft_in));
     } else {
       fftwf_execute_dft_r2c(psig, &full_in[in_start], reinterpret_cast<fftwf_complex*>(fft_in));
