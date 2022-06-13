@@ -272,13 +272,8 @@ std::vector<std::vector<std::complex<float>>> UDFT::run(float *indata)
     if (debug) printf("Copying from UDFT row %d to output row %d\n", idx_out_valid_r, out_start_r + n_delay_r);
     for (int r = 0; r < n_out_valid_r; r++) {
       for (int c = 0; c < n_out_cols; c++) {
-        int m = n_out_cols * r + c;
-        std::cout << "r = " << r << ", c = " << c << ", m = " << m << ", out_start_r = " << out_start_r 
-          << ", n_delay_r = " << n_delay_r << ", idx_out_valid_samp = " << idx_out_valid_samp << 
-          ", n_out_valid_r = " << n_out_valid_r << ", n_out_cols = " << n_out_cols << 
-          ", out_row = " << r + out_start_r + n_delay_r << ", in_sample = " << m + idx_out_valid_samp << "\n";
         if (r + out_start_r + n_delay_r >= n_out_rows) break;
-        full_out[r + out_start_r + n_delay_r][c] = udft[m + idx_out_valid_samp] / (float) n_cols;
+        full_out[r + out_start_r + n_delay_r][c] = udft[n_out_cols * r + c + idx_out_valid_samp] / (float) n_cols;
       }
     }
   } // End loop
@@ -289,8 +284,8 @@ std::vector<std::vector<std::complex<float>>> UDFT::run(float *indata)
     write_out("input.bin", (void *) &indata[0], sizeof(float), n_full);
     write_out("filter.bin", (void *) &filt[0], sizeof(float), n_filt);
     write_out("onebuffer.bin", (void *) &udft[0], sizeof(fftwf_complex), n_fft_v);
-    // write_append("channelized.bin", (void *) &full_out[m], sizeof(fftwf_complex), n_out);
-    for (size_t m = 0; m < full_out.size(); m++) {
+    write_out("channelized.bin", (void *) &full_out[0][0], sizeof(fftwf_complex), full_out[0].size());
+    for (size_t m = 1; m < full_out.size(); m++) {
       write_append("channelized.bin", (void *) &full_out[m][0], sizeof(fftwf_complex), full_out[m].size());
     }
     write_out("fftdata.bin", (void *) &fft_in[0], sizeof(fftwf_complex), n_fft_h);

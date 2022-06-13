@@ -101,15 +101,7 @@ int main(int argc, char **argv) {
   auto duration = duration_cast<nanoseconds>(high_resolution_clock::now() - start);
   std::cout << "Elapsed time for run call: " << duration.count() * 1e-9 << " seconds" << std::endl;
 
-  std::cout << "First 10 output rows\n";
-  for (size_t m = 0; m < 10; m++) {
-    for (size_t n = 0; n < full_out[m].size(); n++) {
-      std::cout << full_out[m][n] << ", ";
-    }
-    std::cout << "\n";
-  }
-
+  // Free input memory
   fftwf_free(full_in);
-  // fftwf_free(full_out);
 }
 // }}}
