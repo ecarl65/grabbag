@@ -20,7 +20,6 @@
 #include <complex>
 #include <string>
 #include <chrono>
-#include <vector>
 #include <exception>
 #include <getopt.h>
 #include <fftw3.h>
@@ -92,9 +91,9 @@ int main(int argc, char **argv) {
   UDFT channelizer(downsamp, n_full, n_filt, samp_rate, write, debug);
 
   // Set up input signal
-  std::vector<float> full_in(n_full);
+  float *full_in = fftwf_alloc_real(n_full);
   float chirp_period = n_full / samp_rate / 2; // This many *full* cycles of chirp
-  make_chirp(full_in, samp_rate, chirp_period);
+  make_chirp(full_in, n_full, samp_rate, chirp_period);
 
   // Run and time result
   auto start = high_resolution_clock::now();
@@ -103,5 +102,6 @@ int main(int argc, char **argv) {
   auto duration = duration_cast<nanoseconds>(stop - start);
   std::cout << "Elapsed time for run call: " << duration.count() * 1e-9 << " seconds" << std::endl;
 
+  fftwf_free(full_in);
 }
 // }}}
