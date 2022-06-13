@@ -42,6 +42,11 @@ class UDFT {
       T Ts = 1 / samp_rate;
       const int Nfilt_half = (n_filt - 1) >> 1;
 
+      // Create plan
+      fftwf_plan pfilt = fftwf_plan_many_dft_r2c(filt_c.rank, filt_c.n_size, filt_c.howmany, filt_full,
+          filt_c.inembed, filt_c.istride, filt_c.idist, (fftwf_complex *) fft_filt,
+          filt_c.onembed, filt_c.ostride, filt_c.odist, FFTW_MEASURE);
+
       // Make filter
       int outidx = 0;
       T filt_sum = 0;
@@ -75,9 +80,6 @@ class UDFT {
       }
 
       // Filter FFT
-      fftwf_plan pfilt = fftwf_plan_many_dft_r2c(filt_c.rank, filt_c.n_size, filt_c.howmany, filt_full,
-          filt_c.inembed, filt_c.istride, filt_c.idist, (fftwf_complex *) fft_filt,
-          filt_c.onembed, filt_c.ostride, filt_c.odist, FFTW_MEASURE);
       fftwf_execute(pfilt);
       fftwf_destroy_plan(pfilt);
     } // }}}
@@ -199,14 +201,6 @@ class UDFT {
         fft_mult = reinterpret_cast<std::complex<T>*>(fftwf_alloc_complex(n_fft_h));
         udft = reinterpret_cast<std::complex<T>*>(fftwf_alloc_complex(n_fft_v));
 
-        for (size_t m = 0; m < n_delay_samp; m++) full_out[m] = 0;
-
-        // Make input chirp
-        make_chirp(full_in, n_full, samp_rate, chirp_period);
-
-        // Design filter and do polyphase decomposition and FFT of filter
-        poly_filt_design();
-
         // Data polyphase FFT
         psig = fftwf_plan_many_dft_r2c(fwd_c.rank, fwd_c.n_size, fwd_c.howmany, buffer_in,
             fwd_c.inembed, fwd_c.istride, fwd_c.idist,
@@ -224,6 +218,17 @@ class UDFT {
             col_c.inembed, col_c.istride, col_c.idist,
             reinterpret_cast<fftwf_complex*>(udft),
             col_c.onembed, col_c.ostride, col_c.odist, FFTW_MEASURE);
+
+
+        // Design filter and do polyphase decomposition and FFT of filter
+        poly_filt_design();
+
+        // Make input chirp
+        make_chirp(full_in, n_full, samp_rate, chirp_period);
+
+        // Initialize output
+        for (size_t m = 0; m < n_delay_samp; m++) full_out[m] = 0;
+
       }
     // }}}
 
