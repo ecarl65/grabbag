@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
   // Values on which all others depend
   int downsamp = 8; // Downsample factor
   int filt_ord = 8;
-  int full_ord = 256;
+  int full_ord = 8;
   float samp_rate = 10e3;
   bool debug = false;
   bool write = false;
@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
         printf("Arguments:\n");
         printf("\td - Downsample integer\n");
         printf("\tf - Filter order (full length is order * downsample + 1)\n");
-        printf("\tn - Number of total samples (multiple of downsamp)\n");
+        printf("\tn - Number of total samples (power of two, which is multiplied by downsamp)\n");
         printf("\ts - Sample rate\n");
         printf("\tv - Verbose output\n");
         printf("\tw - Write output files\n");
@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
              break; 
     } 
   } 
-  int n_full = full_ord * downsamp;  // Total number of samples
+  int n_full = pow(2, full_ord) * downsamp;  // Total number of samples
   int n_filt = filt_ord * downsamp + 1;
 
   // Set up threads
