@@ -1,6 +1,6 @@
 
 CXX=g++
-CXXFLAGS=-g -Ofast -std=c++11 -Wall -fopenmp -fPIC
+CXXFLAGS=-g -O3 -std=c++11 -Wall -fopenmp -fPIC
 PCXXFLAGS=$(shell pybind11-config --includes)
 LDFLAGS=-lfftw3f -lfftw3 -lfftw3_omp -lfftw3f_omp -lm
 EXT=$(shell python3-config --extension-suffix)
