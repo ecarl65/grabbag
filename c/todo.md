@@ -3,7 +3,7 @@
 - [x] Last buffer
 - [x] Single float precision
 - [x] OpenMP parallel FFTW
-- [ ] pybind11 or Cython or CFFI interface, with persistent classes
+- [x] pybind11 or Cython or CFFI interface, with persistent classes
 - [x] C++11 version with templatization and overloading
 - [x] Wisdom and preserve state/info
 - [ ] Oversampled version
