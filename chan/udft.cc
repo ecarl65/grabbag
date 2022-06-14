@@ -294,8 +294,8 @@ std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
 }
 // }}}
 
-// {{{ run(py::array)
-py::array UDFT::run(py::array indata)
+// {{{ pyrun(py::array)
+py::array UDFT::pyrun(py::array indata)
 {
 
   auto indata_obj_prop = indata.request();
@@ -309,7 +309,6 @@ py::array UDFT::run(py::array indata)
 
   py::array ret =  py::cast(output); //py::array(vect_arr.size(), vect_arr.data());
   return ret;
-
 
 }
 // }}}

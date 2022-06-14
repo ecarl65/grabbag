@@ -26,7 +26,7 @@ PYBIND11_MODULE(pyudft, m) {
     py::class_<UDFT>(m, "udft")
         .def(py::init<int, int, float, bool, bool>())
         .def("poly_filt_design", &UDFT::poly_filt_design, "Design and transform the filter")
-        .def("run", static_cast<void (UDFT::*)(py::array)>(&UDFT::run), "Run with python array input")
-        .def("run", static_cast<void (UDFT::*)(float *, int)>(&UDFT::run), "Run with C array input");
+        .def("run", &UDFT::run, "Run with python array input")
+        .def("pyrun", &UDFT::pyrun, "Run with C array input");
 }
 

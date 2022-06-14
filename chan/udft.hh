@@ -20,11 +20,12 @@
 #include <vector>
 #include <fftw3.h>
 #include <stdexcept>
+#include "utils.hh"
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
+#include <pybind11/complex.h>
 #include <pybind11/stl.h>
 #include <Python.h>
-#include "utils.hh"
 
 namespace py = pybind11;
 
@@ -37,7 +38,7 @@ class UDFT {
     ~UDFT();
     void poly_filt_design();
     std::vector<std::vector<cfloat>> run(float *indata, int n_full);
-    py::array run(py::array indata);
+    py::array pyrun(py::array indata);
 
     // Variables
     int downsamp, n_filt;
