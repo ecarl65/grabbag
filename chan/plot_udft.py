@@ -33,7 +33,6 @@ axs[0, 0].grid(True)
 
 fc_list = np.linspace(0, fs/2, M//2 + 1, endpoint=True)
 tin = np.arange(len(indata)) / fs
-tout = np.arange(len(outdata)) / fs
 tfilt = np.arange(len(filt)) / fs
 
 for fc in fc_list:
@@ -46,7 +45,6 @@ axs[1, 0].set_xlabel("Frequency (Hz)")
 axs[1, 0].set_ylabel("Magnitude (dB)")
 axs[1, 0].grid(True)
 
-pchan = 0
 tds = np.arange(channelized.shape[0]) / fs * M
 tob = np.arange(chann_buf.shape[0]) / fs * M
 axs[0, 1].plot(tin, indata, label="Input", color="dimgray", alpha=0.3)
@@ -63,12 +61,17 @@ axs[0, 1].text(0.1, -1.5, "First/Last Channels real, others magnitude", horizont
 axs[0, 1].grid(True)
 axs[0, 1].set_ylim(-2, 1.5)
 
-f = np.linspace(0, fs / 2, fdata.shape[1], endpoint=False)
-c = np.arange(fdata.shape[0])
-axs[2, 0].pcolormesh(f, c, np.abs(fdata), shading="auto")
-axs[2, 0].set_title("FFT of Polyphase Data")
-axs[2, 0].set_xlabel("Frequency (Hz)")
-axs[2, 0].set_ylabel("Polyphase Channel")
+mid_chan = (M // 2 + 1) // 2
+tmp_data = channelized[:, mid_chan]
+axs[2, 0].plot(tds, np.real(tmp_data), label="real")
+axs[2, 0].plot(tds, np.imag(tmp_data), label="imag")
+axs[2, 0].plot(tds, np.abs(tmp_data), "g", label="mag")
+axs[2, 0].plot(tds, -np.abs(tmp_data), "g")
+axs[2, 0].set_title(f"Output Channel {mid_chan}")
+axs[2, 0].set_xlabel("Time (sec)")
+axs[2, 0].set_ylabel("Amplitude")
+axs[2, 0].grid(True)
+axs[2, 0].legend()
 
 c = np.arange(channelized.shape[1])
 t = np.arange(channelized.shape[0]) / fs * M

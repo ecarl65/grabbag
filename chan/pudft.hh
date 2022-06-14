@@ -35,6 +35,7 @@ class PUDFT : public UDFT {
     using UDFT::UDFT;
 
     py::array pyrun(py::array indata);
+    py::array get_filter();
 
 };
 
