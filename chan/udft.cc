@@ -293,22 +293,3 @@ std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
   return full_out;
 }
 // }}}
-
-// {{{ pyrun(py::array)
-py::array UDFT::pyrun(py::array indata)
-{
-
-  auto indata_obj_prop = indata.request();
-
-  //initialize values
-  float *in_vals = (float*) indata_obj_prop.ptr;
-
-  int n_full = static_cast<int>(indata_obj_prop.shape[0]);
-
-  auto output = run(in_vals, n_full);
-
-  py::array ret =  py::cast(output); //py::array(vect_arr.size(), vect_arr.data());
-  return ret;
-
-}
-// }}}
