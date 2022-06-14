@@ -13,6 +13,8 @@ p = pet.Pet("Cassie")
 print(p.getName())
 p.setName("Ginger")
 print(p.getName())
+print("Testing a * (2 + 1j)")
+print(f"a = {a}")
 print(p.nump(a))
 
 print("")

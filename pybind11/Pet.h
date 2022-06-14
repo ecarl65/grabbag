@@ -19,9 +19,12 @@
 #include <string>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
+#include <pybind11/complex.h>
 #include <pybind11/stl.h>
 #include <Python.h>
+
 namespace py = pybind11;
+using cfloat = std::complex<float>;
 
 struct Pet {
   Pet(const std::string &name);
