@@ -6,8 +6,9 @@
 - [x] pybind11 or Cython or CFFI interface, with persistent classes
 - [x] C++11 version with templatization and overloading
 - [x] Wisdom and preserve state/info
-- [ ] Oversampled version
-- [ ] Better RNG and SNR calcs
 - [x] Timing
+- [ ] Oversampled version
+- [ ] Optional overlap in filter design
+- [ ] Better RNG and SNR calcs
+- [ ] ~Better streaming - output buffers at a time~
 - [ ] ~Bluefile? (no, this will be called from python)~
-- [ ] ~Streaming? (output buffers at a time somehow)~

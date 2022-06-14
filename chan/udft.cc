@@ -82,24 +82,24 @@ UDFT::UDFT(int downsamp, int n_filt, float samp_rate, bool write, bool debug) :
   }
 
   // Buffer sizes
-  n_buffer = (n_filt - 1) * 8;  // Size of the buffers, for now fix at 8x the filter size
-  n_cols = n_buffer / downsamp;
-  n_cols_fft = (n_cols / 2 + 1);
-  n_rows_fft = downsamp / 2 + 1;
-  n_fft_h = n_cols_fft * downsamp;
-  n_fft_v = n_rows_fft * n_cols;
-  n_delay = (n_filt - 1) >> 1;
-  n_delay_r = n_delay / downsamp;
-  n_delay_samp = n_delay_r * n_rows_fft;
-  idx_out_valid_r = (n_filt - 1) / downsamp;
-  idx_out_valid_samp = idx_out_valid_r * n_rows_fft;
-  n_in_valid = n_buffer - n_filt + 1;
-  n_out_valid_r = n_in_valid / downsamp;
-  n_out_valid_samp = n_out_valid_r * n_rows_fft;
+  n_buffer = (n_filt - 1) * 8;                         // Size of the buffer, 8x filter size. TODO Make option.
+  n_cols = n_buffer / downsamp;                        // # of columns in FFT of polyphase data/filt across time
+  n_cols_fft = (n_cols / 2 + 1);                       // # of colums above except FFT output of real input
+  n_rows_fft = downsamp / 2 + 1;                       // # rows of polyphase decomp (since real data not num channels)
+  n_fft_h = n_cols_fft * downsamp;                     // Total # of output samples in FFT of data and filter
+  n_fft_v = n_rows_fft * n_cols;                       // Total # of samples in output of modulating FFT across channels
+  n_delay = (n_filt - 1) >> 1;                         // Delay of filter at input rate
+  n_delay_r = n_delay / downsamp;                      // Output delay of filter at output rate, so row of channelizer
+  n_delay_samp = n_delay_r * n_rows_fft;               // Output delay starting sample when output matrix is array
+  idx_out_valid_r = (n_filt - 1) / downsamp;           // Output rate index of valid starting sample
+  idx_out_valid_samp = idx_out_valid_r * n_rows_fft;   // Output rate index of valid starting sample when 2D-->1D
+  n_in_valid = n_buffer - n_filt + 1;                  // # of input samples that produce valid outputs
+  n_out_valid_r = n_in_valid / downsamp;               // # output samples that are valid at output rate
+  n_out_valid_samp = n_out_valid_r * n_rows_fft;       // # output samples that are valid when 2D-->1D
 
   // Frequency and time constants
-  samp_period = 1.0 / samp_rate;
-  f_cutoff = samp_rate / (2 * downsamp);
+  samp_period = 1.0 / samp_rate;                       // Sample period
+  f_cutoff = samp_rate / (2 * downsamp);               // Filter cutoff frequency
 
 
   if (debug) {
