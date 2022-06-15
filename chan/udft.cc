@@ -52,7 +52,7 @@ void UDFT::poly_filt_design()
 
   // Filter polyphase decomposition
   for (int n = 0; n < n_cols_filt; n++) {
-    for (int rho = 0; rho < downsamp; rho++) {
+    for (int rho = 0; rho < n_channels; rho++) {
       int inidx = n * downsamp - rho;
       int outidx = rho * n_cols_filt + n;
       if (inidx < 0 || inidx >= n_filt) {
@@ -111,7 +111,7 @@ UDFT::UDFT(int downsamp, int oversamp, int n_filt, float samp_rate, bool write, 
 
   // Frequency and time constants
   samp_period = 1.0 / samp_rate;           // Sample period
-  f_cutoff = samp_rate / (2 * downsamp);   // Filter cutoff frequency
+  f_cutoff = samp_rate / (2 * n_channels);   // Filter cutoff frequency
 
   if (debug) {
     printf("Downsample amount: %d\n", downsamp);

@@ -13,15 +13,18 @@ if len(sys.argv) > 1:
 else:
     M = 8
 
-I = 2
-K = M * I
+if len(sys.argv) > 2:
+    I = int(sys.argv[2])
+else:
+    I = 1
 
-act_channels = K // 2 + 1
+K = M * I
+Kh = K // 2 + 1
 
 indata = np.fromfile("input.bin", dtype=np.float32)
 outdata = np.fromfile("filtered.bin", dtype=np.float32)
-channelized = np.reshape(np.fromfile("channelized.bin", dtype=np.complex64), (-1, act_channels))
-chann_buf = np.reshape(np.fromfile("onebuffer.bin", dtype=np.complex64), (-1, act_channels))
+channelized = np.reshape(np.fromfile("channelized.bin", dtype=np.complex64), (-1, Kh))
+chann_buf = np.reshape(np.fromfile("onebuffer.bin", dtype=np.complex64), (-1, Kh))
 filt = np.fromfile("filter.bin", dtype=np.float32)
 fdata = np.reshape(np.fromfile("fftdata.bin", dtype=np.complex64), (K, -1))
 ffilt = np.reshape(np.fromfile("fftfilt.bin", dtype=np.complex64), (K, -1))
