@@ -110,27 +110,105 @@ That seems simple enough that looking at the pybind11 code it can be done.
 
 # Dimensions
 
+This shows the dimensions of the oversampled filterbank. In that case $K$ is the number of channels, $M$ is the downsample rate, and $I$ is an integer such that $K = MI$. In practice we'll pretty much always make $I = 2$. Note that a lot of these dimensions change in or out of the FFTs because we're assuming that we're starting with real input data. When you do an FFT of real input data that's length $N$ that makes the output be length $N // 2 + 1$, using the python notation for integer/floor division. In that case the output has the first and last samples real and the in-between samples are complex. Doing the inverse gets you back to length $N$. 
+
 ## Input
 
 | 0 | 1 | 2 | ... | N<sub>full</sub> - 1 |
-| - | - | - | - | - |
+| - | - | - | --- | -------------------- |
 
 ## Buffer Size
 
 N<sub>buffer</sub> &Lt; N<sub>full</sub>
 
 | 0 | 1 | 2 | ... | N<sub>buffer</sub> - 1 |
-| - | - | - | - | - |
+| - | - | - | --- | ---------------------- |
 
 ## Filter
 
+N<sub>filter</sub> &Lt; N<sub>buffer</sub>
+
+
 | 0 | 1 | 2 | ... | N<sub>filter</sub> - 1 |
-| - | - | - | - | - |
+| - | - | - | --- | ---------------------- |
 
 ## Polyphase Filter
 
-| <span style="font-weight:normal">0 | 1 | 2 | ... | N<sub>buffer</sub> / M - 1</span> |
-|:-:|---|---|-----|-----|
-| 1 |   |   |     |     |
-| ... |   |   |     |     |
-| K - 1 |   |   |     |     |
+| 0     | 1 | 2 | 3 | ... | N<sub>buffer</sub> / M - 1 |
+|:-----:|---|---|---|-----|----------------------------|
+| 1     |   |   |   |     |                            |
+| ...   |   |   |   |     |                            |
+| K - 1 |   |   |   |     |                            |
+
+## FFT Filter
+
+| 0     | 1 | 2 | 3 | ... | N<sub>buffer</sub> / (2M) |
+|:-----:|---|---|---|-----|---------------------------|
+| 1     |   |   |   |     |                           |
+| ...   |   |   |   |     |                           |
+| K - 1 |   |   |   |     |                           |
+
+
+## Polyphase Data
+
+| 0     | 1 | ... | N<sub>buffer</sub> / K - 1 |
+|:-----:|---|-----|----------------------------|
+| 1     |   |     |                            |
+| ...   |   |     |                            |
+| K - 1 |   |     |                            |
+
+## FFT Data
+
+| 0     | 1 | ... | N<sub>buffer</sub> / (2K) |
+|:-----:|---|-----|---------------------------|
+| 1     |   |     |                           |
+| ...   |   |     |                           |
+| K - 1 |   |     |                           |
+
+## Circular Convolution
+
+In reality we're supposed to upsample each input polyphase channel of data by $I$, where $K = MI$. But we can cleverly get around that by doing it in the frequency domain. Upsampling in the time domain is equivalent to $I$ copies in the frequency domain. But rather than copying the data over and over we can just do a modulo on the indexing when we multiply and wrap around the values again. I'm a little shocked I didn't know about this trick, but when doing an FFT-based convolution it sure seems like a simple hack. It means we can do the polyphase decomposition and FFTs without rearranging any input data and passing parameters to FFTW to handle strides. The parameters for the FFT of an input array of size N<sub>buffer</sub> is:
+
+```c++
+int n_size[] = {N_buffer / M};    // Logical size of FFT
+int rank = 1;                     // Multiple 1D FFTs
+int howmany = K;                  // How many FFTs to do
+int idist = 1;                    // Distance in input between starting each FFT
+int odist = N_buffer / (2*K) + 1; // Distance in output between start of each FFT output
+int istride = K;                  // Distance between successive inputs in each FFT, this is the polyphase jump
+int ostride = 1;                  // Distance between successive outputs in each FFT, this is how the polyphase alters output
+int *inembed = NULL;
+int *onembed = NULL;
+```
+    
+So the equation would be something like the following:
+
+```c++
+for (size_t row = 0; row < K; row++) {
+    for (size_t col = 0; col < N_buffer / (2 * M) + 1; col++) {
+        fft_mult[row][col] = fft_filt[row][col] * fft_data[row, col % (N_buffer / (2 * K) + 1)];
+    }
+}
+```
+## Inverse FFT
+
+The inverse FFT gets us back to real samples, so it alters the dimensions to be:
+
+| 0     | 1 | ... | N<sub>buffer</sub> / M - 1 |
+|:-----:|---|-----|----------------------------|
+| 1     |   |     |                            |
+| ...   |   |     |                            |
+| K - 1 |   |     |                            |
+
+## Channel FFT
+
+The next FFT is across the channels and basically performs the modulation to the center frequency of each channel. Because after this step we'll be doing things with discarding invalid samples and handling delays it actually makes those operations *much* easier if we transpose the output. Because C is row-major order that means that each row will correspond to an output time sample and each column is a channel. Again, since we have a real input that means that we go from $K$ channels to $K // 2 + 1$ output channels.
+
+| 0                          | 1 | ... | K / 2 |
+|:--------------------------:|---|-----|-------|
+| 1                          |   |     |       |
+| 2                          |   |     |       |
+| 3                          |   |     |       |
+| 4                          |   |     |       |
+| ...                        |   |     |       |
+| N<sub>buffer</sub> / M - 1 |   |     |       |
