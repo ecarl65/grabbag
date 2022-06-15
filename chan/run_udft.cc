@@ -31,13 +31,14 @@ using namespace std::chrono;
 int main(int argc, char **argv) {
   // Parse arguments, start with defaults.
   int downsamp = 8;
+  int oversamp = 1;
   int filt_ord = 8;
   int full_ord = 8;
   float samp_rate = 10e3;
   bool debug = false;
   bool write = false;
   int opt;
-  while((opt = getopt(argc, argv, ":d:f::n::s::h::vw")) != -1) 
+  while((opt = getopt(argc, argv, ":d:f::n::s::h::o::vw")) != -1) 
   { 
     switch(opt) 
     { 
@@ -55,6 +56,9 @@ int main(int argc, char **argv) {
         break;
       case 'd': 
         downsamp = atoi(optarg);
+        break;
+      case 'o': 
+        oversamp = atoi(optarg);
         break;
       case 'v': 
         debug = true;
@@ -79,8 +83,9 @@ int main(int argc, char **argv) {
              break; 
     } 
   } 
-  int n_full = pow(2, full_ord) * downsamp;  // Total number of samples
-  int n_filt = filt_ord * downsamp + 1;
+  // int n_full = pow(2, full_ord) * downsamp * oversamp;  // Total number of samples
+  int n_full = pow(2, full_ord);
+  int n_filt = filt_ord * downsamp * oversamp + 1;
 
   // Set up threads
   int init_threads = fftw_init_threads();
@@ -88,7 +93,7 @@ int main(int argc, char **argv) {
   fftw_plan_with_nthreads(downsamp);
 
   // Set up channelizer
-  UDFT channelizer(downsamp, n_filt, samp_rate, write, debug);
+  UDFT channelizer(downsamp, oversamp, n_filt, samp_rate, write, debug);
 
   // Set up input signal
   float *full_in = fftwf_alloc_real(n_full);

@@ -12,15 +12,19 @@ if len(sys.argv) > 1:
     M = int(sys.argv[1])
 else:
     M = 8
-Mh = int(M / 2) + 1
+
+I = 2
+K = M * I
+
+act_channels = K // 2 + 1
 
 indata = np.fromfile("input.bin", dtype=np.float32)
 outdata = np.fromfile("filtered.bin", dtype=np.float32)
-channelized = np.reshape(np.fromfile("channelized.bin", dtype=np.complex64), (-1, Mh))
-chann_buf = np.reshape(np.fromfile("onebuffer.bin", dtype=np.complex64), (-1, Mh))
+channelized = np.reshape(np.fromfile("channelized.bin", dtype=np.complex64), (-1, act_channels))
+chann_buf = np.reshape(np.fromfile("onebuffer.bin", dtype=np.complex64), (-1, act_channels))
 filt = np.fromfile("filter.bin", dtype=np.float32)
-fdata = np.reshape(np.fromfile("fftdata.bin", dtype=np.complex64), (M, -1))
-ffilt = np.reshape(np.fromfile("fftfilt.bin", dtype=np.complex64), (M, -1))
+fdata = np.reshape(np.fromfile("fftdata.bin", dtype=np.complex64), (K, -1))
+ffilt = np.reshape(np.fromfile("fftfilt.bin", dtype=np.complex64), (K, -1))
 
 Nfilt = len(filt)
 Noutdelay = int((Nfilt - 1) / (2 * M))
@@ -31,7 +35,7 @@ axs[0, 0].plot(filt)
 axs[0, 0].set_title("Filter Taps")
 axs[0, 0].grid(True)
 
-fc_list = np.linspace(0, fs/2, M//2 + 1, endpoint=True)
+fc_list = np.linspace(0, fs/2, K//2 + 1, endpoint=True)
 tin = np.arange(len(indata)) / fs
 tfilt = np.arange(len(filt)) / fs
 
@@ -51,7 +55,7 @@ axs[0, 1].plot(tin, indata, label="Input", color="dimgray", alpha=0.3)
 axs[0, 1].plot(tds, np.real(channelized[:, 0]), label=f"Channel 0 (real)")
 axs[0, 1].plot(tds, np.abs(channelized[:, 1:-1]) * 2, label="Other Channels (mag)")
 #  axs[0, 1].plot(tds, np.abs(channelized[:, 1:-1]), label="Other Channels (mag)")
-axs[0, 1].plot(tds, np.real(channelized[:, -1]), label=f"Channel {M >> 1} (real)")
+axs[0, 1].plot(tds, np.real(channelized[:, -1]), label=f"Channel {K >> 1} (real)")
 #  axs[0, 1].plot(tob, np.abs(chann_buf) / chann_buf.shape[0] * 2, label=f"One Buffer Channelized Output")
 axs[0, 1].set_title("Input & Output (Normalized)")
 axs[0, 1].set_xlabel("Time (s)")
@@ -61,7 +65,7 @@ axs[0, 1].text(0.1, -1.5, "First/Last Channels real, others magnitude", horizont
 axs[0, 1].grid(True)
 axs[0, 1].set_ylim(-2, 1.5)
 
-mid_chan = (M // 2 + 1) // 2
+mid_chan = (K // 2 + 1) // 2
 tmp_data = channelized[:, mid_chan]
 axs[2, 0].plot(tds, np.real(tmp_data), label="real")
 axs[2, 0].plot(tds, np.imag(tmp_data), label="imag")
@@ -80,7 +84,7 @@ axs[2, 1].set_title("Channelized Output")
 axs[2, 1].set_ylabel("Channel")
 axs[2, 1].set_xlabel("Time Sample")
 
-f, t, p = signal.stft(indata, fs=10e3, nperseg=M)
+f, t, p = signal.stft(indata, fs=10e3, nperseg=K)
 axs[1, 1].pcolor(t, f, np.abs(p), shading="auto")
 axs[1, 1].set_title("STFT from SciPy")
 axs[1, 1].set_xlabel("Time")

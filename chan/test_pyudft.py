@@ -7,15 +7,16 @@ import time
 import pyudft
 
 # {{{ run_channelizer
-def run_channelizer(downsample, sample_rate, filt_ord, full_ord, write=False, verbose=True, no_plots=False):
+def run_channelizer(downsample, oversample, sample_rate, filt_ord, full_ord, write=False, verbose=True, no_plots=False):
     """Main entry point to call the channelizer"""
 
     # Variables
-    n_filt = downsample * filt_ord + 1
+    n_channels = downsample * oversample
+    n_filt = downsample * oversample * filt_ord + 1
     n_full = 2**full_ord
 
     # Set up channelizer
-    pu = pyudft.pudft(downsample, n_filt, sample_rate, write, verbose)
+    pu = pyudft.pudft(downsample, oversample, n_filt, sample_rate, write, verbose)
 
     # Get filter
     filt = pu.get_filter()
@@ -67,7 +68,7 @@ def run_channelizer(downsample, sample_rate, filt_ord, full_ord, write=False, ve
         axs[0, 1].grid(True)
         axs[0, 1].set_ylim(-2, 1.5)
 
-        mid_chan = (downsample // 2 + 1) // 2
+        mid_chan = (n_channels // 2 + 1) // 2
         tmp_data = channelized[:, mid_chan]
         axs[2, 0].plot(tds, np.real(tmp_data), label="real")
         axs[2, 0].plot(tds, np.imag(tmp_data), label="imag")
@@ -86,7 +87,7 @@ def run_channelizer(downsample, sample_rate, filt_ord, full_ord, write=False, ve
         axs[2, 1].set_ylabel("Channel")
         axs[2, 1].set_xlabel("Time Sample")
 
-        f, t, p = signal.stft(input_signal, fs=sample_rate, nperseg=downsample)
+        f, t, p = signal.stft(input_signal, fs=sample_rate, nperseg=n_channels)
         axs[1, 1].grid(False)
         axs[1, 1].pcolormesh(t, f, np.abs(p), shading="auto")
         axs[1, 1].set_title("STFT from SciPy")
@@ -107,6 +108,8 @@ if __name__ == "__main__":
 
     parser.add_argument("-d", "--downsample", help="Downsample amount", type=int, action="store",
             default=8)
+    parser.add_argument("-o", "--oversample", help="Oversample factor", type=int, action="store",
+            default=1)
     parser.add_argument("-s", "--sample-rate", help="Sample rate (Hz)", action="store",
             type=float, dest="sample_rate", default=10e3)
     parser.add_argument("--filt-ord", help="Filter order (length is this times downsample + 1)",
@@ -120,7 +123,7 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--no-plots", help="Set to suppress plots", action="store_true")
     opts = parser.parse_args()
 
-    run_channelizer(opts.downsample, opts.sample_rate, opts.filt_ord, opts.full_ord,
+    run_channelizer(opts.downsample, opts.oversample, opts.sample_rate, opts.filt_ord, opts.full_ord,
             opts.write, opts.verbose, opts.no_plots)
 
 # }}}
