@@ -22,53 +22,6 @@
 #include <stdexcept>
 #include "udft.hh"
 
-// {{{ poly_filt_design
-void UDFT::poly_filt_design()
-{
-  const int Nfilt_half = (n_filt - 1) >> 1;
-
-  // Create plan
-  fftwf_plan pfilt = fftwf_plan_many_dft_r2c(filt_c.rank, filt_c.n_size, filt_c.howmany, filt_full,
-      filt_c.inembed, filt_c.istride, filt_c.idist, (fftwf_complex *) fft_filt,
-      filt_c.onembed, filt_c.ostride, filt_c.odist, FFTW_MEASURE);
-
-  // Make filter
-  int outidx = 0;
-  float filt_sum = 0;
-  for (int m = -Nfilt_half; m <= Nfilt_half; m++) {
-    // Sinc low pass filter at twice the SOI freq
-    if (m == 0) {
-      filt[outidx] = 2 * f_cutoff / samp_rate;
-    } else {
-      filt[outidx] = sin(2 * M_PI * f_cutoff * m / samp_rate) / (m * M_PI);
-    }
-
-    // Hamming window and normalization
-    // filt[outidx] *= (0.54 - 0.46 * cos(2 * M_PI * outidx / n_filt));
-    filt[outidx] *= ((25.0 / 46.0) - (21.0 / 46.0) * cos(2 * M_PI * outidx / n_filt));
-    filt_sum += filt[outidx++];
-  }
-  for (int m = 0; m < n_filt; m++) filt[m] /= filt_sum;  // Normalize the filter
-
-  // Filter polyphase decomposition
-  for (int n = 0; n < n_cols; n++) {
-    for (int rho = 0; rho < downsamp; rho++) {
-      int inidx = n * downsamp - rho;
-      int outidx = rho * n_cols + n;
-      if (inidx < 0 || inidx >= n_filt) {
-        filt_full[outidx] = 0;
-      } else {
-        filt_full[outidx] = filt[inidx];
-      }
-      outidx++;
-    }
-  }
-
-  // Filter FFT
-  fftwf_execute(pfilt);
-  fftwf_destroy_plan(pfilt);
-} // }}}
-
 // {{{ UDFT
 UDFT::UDFT(int downsamp, int n_filt, float samp_rate, bool write, bool debug) : 
   downsamp(downsamp), n_filt(n_filt), samp_rate(samp_rate), write(write), debug(debug) 
@@ -88,7 +41,7 @@ UDFT::UDFT(int downsamp, int n_filt, float samp_rate, bool write, bool debug) :
   n_rows_fft = downsamp / 2 + 1;                       // # rows of polyphase decomp (since real data not num channels)
   n_fft_h = n_cols_fft * downsamp;                     // Total # of output samples in FFT of data and filter
   n_fft_v = n_rows_fft * n_cols;                       // Total # of samples in output of modulating FFT across channels
-  n_delay = (n_filt - 1) >> 1;                         // Delay of filter at input rate
+  n_delay = (n_filt - 1) / 2;                          // Delay of filter at input rate
   n_delay_r = n_delay / downsamp;                      // Output delay of filter at output rate, so row of channelizer
   n_delay_samp = n_delay_r * n_rows_fft;               // Output delay starting sample when output matrix is array
   idx_out_valid_r = (n_filt - 1) / downsamp;           // Output rate index of valid starting sample
@@ -224,6 +177,53 @@ UDFT::~UDFT() {
 }
 // }}}
 
+// {{{ poly_filt_design
+void UDFT::poly_filt_design()
+{
+  const int Nfilt_half = (n_filt - 1) >> 1;
+
+  // Create plan
+  fftwf_plan pfilt = fftwf_plan_many_dft_r2c(filt_c.rank, filt_c.n_size, filt_c.howmany, filt_full,
+      filt_c.inembed, filt_c.istride, filt_c.idist, (fftwf_complex *) fft_filt,
+      filt_c.onembed, filt_c.ostride, filt_c.odist, FFTW_MEASURE);
+
+  // Make filter
+  int outidx = 0;
+  float filt_sum = 0;
+  for (int m = -Nfilt_half; m <= Nfilt_half; m++) {
+    // Sinc low pass filter at twice the SOI freq
+    if (m == 0) {
+      filt[outidx] = 2 * f_cutoff / samp_rate;
+    } else {
+      filt[outidx] = sin(2 * M_PI * f_cutoff * m / samp_rate) / (m * M_PI);
+    }
+
+    // Hamming window and normalization
+    // filt[outidx] *= (0.54 - 0.46 * cos(2 * M_PI * outidx / n_filt));
+    filt[outidx] *= ((25.0 / 46.0) - (21.0 / 46.0) * cos(2 * M_PI * outidx / n_filt));
+    filt_sum += filt[outidx++];
+  }
+  for (int m = 0; m < n_filt; m++) filt[m] /= filt_sum;  // Normalize the filter
+
+  // Filter polyphase decomposition
+  for (int n = 0; n < n_cols; n++) {
+    for (int rho = 0; rho < downsamp; rho++) {
+      int inidx = n * downsamp - rho;
+      int outidx = rho * n_cols + n;
+      if (inidx < 0 || inidx >= n_filt) {
+        filt_full[outidx] = 0;
+      } else {
+        filt_full[outidx] = filt[inidx];
+      }
+      outidx++;
+    }
+  }
+
+  // Filter FFT
+  fftwf_execute(pfilt);
+  fftwf_destroy_plan(pfilt);
+} // }}}
+
 // {{{ run
 std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
 {
@@ -241,7 +241,7 @@ std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
     }
   }
 
-  // Move this to a function
+  // Loop through buffers. TODO Write or send *this* output, not the full memory output.
   const int n_loops = (n_full + n_in_valid - 1) / n_in_valid;
   if (debug) printf("Number of loops: %d\n", n_loops);
   for (int idx = 0; idx < n_loops; idx++) {
@@ -264,6 +264,7 @@ std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
     // Perform inverse FFT to get real data out of convolution
     fftwf_execute(pinv);
 
+    // Perform FFT across channels to do modulation to center frequencies.
     fftwf_execute(pudft);
 
     // Save only valid portion. Re-normalize inverse FFT.

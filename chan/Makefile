@@ -3,12 +3,12 @@ CXX=g++
 CXXFLAGS=-g -O3 -std=c++11 -Wall -fopenmp -fPIC
 PCXXFLAGS=$(shell pybind11-config --includes)
 LDFLAGS=-lfftw3f -lfftw3 -lfftw3_omp -lfftw3f_omp -lm
-EXT=$(shell python3-config --extension-suffix)
+EXT=$(shell python3.8-config --extension-suffix)
 
 all: run_udft pyudft
 
 pyudft: pyudft.o udft.o pudft.o
-	$(CXX) -shared -o $@$(EXT) $(CXXFLAGS) $(PCXXFLAGS) $^ $(LDFLAGS) $(shell python3-config --ldflags)
+	$(CXX) -shared -o $@$(EXT) $(CXXFLAGS) $(PCXXFLAGS) $^ $(LDFLAGS) $(shell python3.8-config --ldflags)
 
 pyudft.o: pyudft.cc
 	$(CXX) $(CXXFLAGS) $(PCXXFLAGS) -c $<

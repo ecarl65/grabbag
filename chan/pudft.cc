@@ -47,7 +47,7 @@ py::array PUDFT::get_filter()
 {
 
   std::vector<float> filter(n_filt);
-  for (size_t m = 0; m < n_filt; m++) filter[m] = filt[m];
+  for (int m = 0; m < n_filt; m++) filter[m] = filt[m];
 
   py::array ret =  py::cast(filter); //py::array(vect_arr.size(), vect_arr.data());
   return ret;
