@@ -61,12 +61,10 @@ def run_channelizer(downsample, oversample, sample_rate, filt_ord, full_ord, wri
         axs[0, 1].plot(tds, np.real(channelized[:, 0]), label=f"Channel 0 (real)")
         axs[0, 1].plot(tds, np.abs(channelized[:, 1:-1]) * 2, label="Other Channels (mag)")
         axs[0, 1].plot(tds, np.real(channelized[:, -1]), label=f"Channel {downsample >> 1} (real)")
-        axs[0, 1].set_title("Input & Output (Normalized)")
+        axs[0, 1].set_title("Input & Output (Normalized) \n (First/Last Real, Others Magnitude)")
         axs[0, 1].set_xlabel("Time (s)")
         axs[0, 1].set_ylabel("Amplitude")
-        axs[0, 1].text(0.1, -1.5, "First/Last Channels real, others magnitude", horizontalalignment="center", verticalalignment="center", bbox=dict(facecolor='white', alpha=0.9))
         axs[0, 1].grid(True)
-        axs[0, 1].set_ylim(-2, 1.5)
 
         mid_chan = (n_channels // 2 + 1) // 2
         tmp_data = channelized[:, mid_chan]
