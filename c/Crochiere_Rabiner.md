@@ -107,3 +107,30 @@ It _is_ worth noting that to design and prepare the channelizer all it requires 
 * The filter overlap amount
 
 That seems simple enough that looking at the pybind11 code it can be done.
+
+# Dimensions
+
+## Input
+
+| 0 | 1 | 2 | ... | N<sub>full</sub> - 1 |
+| - | - | - | - | - |
+
+## Buffer Size
+
+N<sub>buffer</sub> &Lt; N<sub>full</sub>
+
+| 0 | 1 | 2 | ... | N<sub>buffer</sub> - 1 |
+| - | - | - | - | - |
+
+## Filter
+
+| 0 | 1 | 2 | ... | N<sub>filter</sub> - 1 |
+| - | - | - | - | - |
+
+## Polyphase Filter
+
+| <span style="font-weight:normal">0 | 1 | 2 | ... | N<sub>buffer</sub> / M - 1</span> |
+|:-:|---|---|-----|-----|
+| 1 |   |   |     |     |
+| ... |   |   |     |     |
+| K - 1 |   |   |     |     |
