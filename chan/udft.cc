@@ -51,16 +51,15 @@ void UDFT::poly_filt_design()
   for (int m = 0; m < n_filt; m++) filt[m] /= filt_sum;  // Normalize the filter
 
   // Filter polyphase decomposition
-  for (int n = 0; n < n_cols_filt; n++) {
-    for (int rho = 0; rho < n_channels; rho++) {
+  outidx = 0;
+  for (int rho = 0; rho < n_channels; rho++) {
+    for (int n = 0; n < n_cols_filt; n++) {
       int inidx = n * downsamp - rho;
-      int outidx = rho * n_cols_filt + n;
       if (inidx < 0 || inidx >= n_filt) {
-        filt_full[outidx] = 0;
+        filt_full[outidx++] = 0;
       } else {
-        filt_full[outidx] = filt[inidx];
+        filt_full[outidx++] = filt[inidx];
       }
-      outidx++;
     }
   }
 
@@ -307,7 +306,7 @@ std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
     for (size_t m = 1; m < full_out.size(); m++) {
       write_append("channelized.bin", (void *) &full_out[m][0], sizeof(fftwf_complex), full_out[m].size());
     }
-    write_out("fftdata.bin", (void *) &fft_in[0], sizeof(fftwf_complex), n_tot_fft_filt);
+    write_out("fftdata.bin", (void *) &fft_in[0], sizeof(fftwf_complex), n_tot_fft_data);
     write_out("fftfilt.bin", (void *) &fft_filt[0], sizeof(fftwf_complex), n_tot_fft_filt);
   }
 
