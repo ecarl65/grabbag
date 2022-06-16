@@ -17,7 +17,7 @@ def plot_channelizer(downsample, oversample, sample_rate, filt, input_signal, ch
     axs[0, 0].set_title("Filter Taps")
     axs[0, 0].grid(True)
 
-    fc_list = np.linspace(0, sample_rate/2, downsample//2 + 1, endpoint=True)
+    fc_list = np.linspace(0, sample_rate/2, n_channels//2 + 1, endpoint=True)
     tin = np.arange(len(input_signal)) / sample_rate
     tfilt = np.arange(len(filt)) / sample_rate
 

@@ -109,19 +109,21 @@ UDFT::UDFT(int downsamp, int oversamp, int n_filt, float samp_rate, bool write, 
   n_out_valid_samp = n_out_valid_r * n_channels_out;  // # output samples that are valid when 2D-->1D
 
   // Frequency and time constants
-  samp_period = 1.0 / samp_rate;           // Sample period
-  f_cutoff = samp_rate / (2 * n_channels);   // Filter cutoff frequency
+  samp_period = 1.0 / samp_rate;            // Sample period
+  f_cutoff = samp_rate / (2 * n_channels);  // Filter cutoff frequency
 
   if (debug) {
     printf("Downsample amount: %d\n", downsamp);
+    printf("Oversample amount: %d\n", oversamp);
     printf("Number of logical channels: %d\n", n_channels);
-    printf("Number of actual channels: %d\n", n_channels / 2 + 1);
-    printf("Number of complex channels: %d\n", n_channels / 2 - 1);
+    printf("Number of actual output channels: %d\n", n_channels_out);
+    printf("Number of complex channels: %d\n", n_channels_out - 2);
     printf("Filter length: %d\n", n_filt);
     printf("Size of buffer: %d\n", n_buffer);
     printf("Number of samples per output channel per buffer: %d\n", n_cols_filt);
     printf("Number of samples per output channel per buffer in freq domain: %d\n", n_cols_filt_fft);
-    printf("Number of output channels: %d\n", n_channels_out);
+    printf("Number of samples per channel per buffer ignoring oversampling: %d\n", n_cols_data);
+    printf("Number of samples per channel per buffer ignoring oversampling in freq domain: %d\n", n_cols_data_fft);
     printf("Number of samples in FFT of filter: %d\n", n_tot_fft_filt);
     printf("Number of samples in modulating FFT across channels: %d\n", n_tot_out);
     printf("Filter delay in samples at input rate: %d\n", n_delay);
