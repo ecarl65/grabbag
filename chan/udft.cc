@@ -112,6 +112,7 @@ UDFT::UDFT(int downsamp, int oversamp, int n_filt, float samp_rate, bool write, 
   samp_period = 1.0 / samp_rate;            // Sample period
   f_cutoff = samp_rate / (2 * n_channels);  // Filter cutoff frequency
 
+  // {{{ print debug
   if (debug) {
     printf("Downsample amount: %d\n", downsamp);
     printf("Oversample amount: %d\n", oversamp);
@@ -138,6 +139,7 @@ UDFT::UDFT(int downsamp, int oversamp, int n_filt, float samp_rate, bool write, 
     printf("Sample period: %e\n", samp_period);
     printf("Cutoff frequency: %e\n", f_cutoff);
   }
+  // }}}
 
   // Forward FFT of the data. Performs the polyphase decomposition via strides and distances
   // of the FFTW plan.
@@ -286,6 +288,7 @@ std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
     // Perform inverse FFT to get real data out of convolution
     fftwf_execute(pinv);
 
+    // Perform FFT across channels to do modulation
     fftwf_execute(pudft);
 
     // Save only valid portion. Re-normalize inverse FFT.
