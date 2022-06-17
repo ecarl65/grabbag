@@ -110,6 +110,17 @@ UDFT::UDFT(int downsamp, int oversamp, int n_filt, float samp_rate, bool write, 
   fwd_c.inembed = NULL;
   fwd_c.onembed = NULL;
 
+  // // Different approach, not upsampling/replicating
+  // fwd_c.n_size[0] = n_cols_filt;
+  // fwd_c.rank = 1;
+  // fwd_c.howmany = n_channels;
+  // fwd_c.idist = 1;
+  // fwd_c.odist = n_cols_filt_fft;
+  // fwd_c.istride = downsamp;
+  // fwd_c.ostride = 1;
+  // fwd_c.inembed = NULL;
+  // fwd_c.onembed = NULL;
+
   // Fwd FFT of the polyphase filter
   filt_c.n_size[0] = n_cols_filt;
   filt_c.rank = 1;
