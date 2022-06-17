@@ -5,6 +5,49 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 from scipy import signal
+from pprint import pprint as pp
+from shutil import get_terminal_size
+np.set_printoptions(linewidth=get_terminal_size()[0])
+
+# {{{ do_channelizer
+def do_channelizer(downsample, oversample, sample_rate, filt, input_signal):
+    """Do a naive version of the channelizer to test inputs and outputs against"""
+
+    n_channels = downsample * oversample
+
+    # Perform reshaping
+    in_comm = np.reshape(np.r_[input_signal, np.zeros(n_channels - (len(input_signal) % n_channels))], (n_channels, -1))
+
+    # Perform upsample
+    up_comm = np.zeros((n_channels, in_comm.shape[1] * oversample))
+    for chan in range(in_comm.shape[0]):
+        up_comm[chan, ::oversample] = in_comm[chan, :]
+
+    # Create filter
+    filt_len = int(np.ceil(len(filt) / downsample) * downsample + n_channels)
+    filt_cols = int(filt_len / downsample)
+    filt_comm = np.zeros((n_channels, filt_cols))
+    for rho in range(filt_comm.shape[0]):
+        for ds_samp in range(filt_comm.shape[1]):
+            idx = ds_samp * downsample - rho
+            if 0 <= idx < len(filt):
+                filt_comm[rho, ds_samp] = filt[idx]
+
+    print("Filter:")
+    pp(filt_comm)
+
+    # Do the filtering
+    poly = np.zeros_like(up_comm)
+    for ch, data_ch in enumerate(up_comm):
+        poly[ch, :] = signal.lfilter(filt_comm[ch], 1, data_ch)
+
+    # Do the vertical DFT
+    channelized = np.fft.rfft(poly, axis=0)
+
+    # plot_channelizer
+    plot_channelizer(downsample, oversample, sample_rate, filt, input_signal, channelized.T)
+
+# }}} 
 
 # {{{ plot_channelizer
 def plot_channelizer(downsample, oversample, sample_rate, filt, input_signal, channelized):
@@ -75,7 +118,7 @@ def plot_channelizer(downsample, oversample, sample_rate, filt, input_signal, ch
 # }}}
 
 # {{{ main
-def main(downsample, oversample, sample_rate):
+def main(downsample, oversample, sample_rate, run):
     M = downsample
     I = oversample
     K = M * I
@@ -89,7 +132,10 @@ def main(downsample, oversample, sample_rate):
     fdata = np.reshape(np.fromfile("fftdata.bin", dtype=np.complex64), (K, -1))
     ffilt = np.reshape(np.fromfile("fftfilt.bin", dtype=np.complex64), (K, -1))
 
-    plot_channelizer(downsample, oversample, sample_rate, filt, indata, channelized)
+    if run:
+        do_channelizer(downsample, oversample, sample_rate, filt, indata)
+    else:
+        plot_channelizer(downsample, oversample, sample_rate, filt, indata, channelized)
 
 # }}}
 
@@ -106,8 +152,9 @@ if __name__ == "__main__":
             default=1)
     parser.add_argument("-s", "--sample-rate", help="Sample rate (Hz)", action="store",
             type=float, dest="sample_rate", default=10e3)
+    parser.add_argument("--run", help="Run channelizer", action="store_true")
     opts = parser.parse_args()
 
-    main(opts.downsample, opts.oversample, opts.sample_rate)
+    main(opts.downsample, opts.oversample, opts.sample_rate, opts.run)
 
 # }}}

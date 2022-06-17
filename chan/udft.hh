@@ -41,8 +41,8 @@ class UDFT {
     int idx_out_valid_r, idx_out_valid_samp, n_in_valid, n_out_valid_r, n_out_valid_samp;
     float samp_period, f_cutoff;
     fft_config fwd_c, filt_c, inv_c, col_c;
-    float *filt, *buffer_in, *filt_full, *conv_out;
-    cfloat *fft_in, *fft_filt, *fft_mult, *udft;
+    float *filt, *buffer_in, *filt_full, *conv_out;  // FFTW real arrays
+    cfloat *fft_in, *fft_filt, *fft_mult, *udft;     // FFTW complex arrays
     fftwf_plan psig, pinv, pudft;
     bool write, debug;
 };
