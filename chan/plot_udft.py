@@ -16,7 +16,11 @@ def do_channelizer(downsample, oversample, sample_rate, filt, input_signal):
     n_channels = downsample * oversample
 
     # Perform reshaping
-    in_comm = np.reshape(np.r_[input_signal, np.zeros(n_channels - (len(input_signal) % n_channels))], (n_channels, -1))
+    in_comm = np.reshape(
+            np.r_[input_signal, np.zeros(n_channels - (len(input_signal) % n_channels))], 
+            (n_channels, -1),
+            order="F"
+    )
 
     # Perform upsample
     up_comm = np.zeros((n_channels, in_comm.shape[1] * oversample))
@@ -35,6 +39,9 @@ def do_channelizer(downsample, oversample, sample_rate, filt, input_signal):
 
     print("Filter:")
     pp(filt_comm)
+
+    print("Data:")
+    pp(up_comm[:, :10])
 
     # Do the filtering
     poly = np.zeros_like(up_comm)
