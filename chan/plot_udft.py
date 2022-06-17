@@ -46,7 +46,8 @@ def do_channelizer(downsample, oversample, sample_rate, filt, input_signal):
     # Do the filtering
     poly = np.zeros_like(up_comm)
     for ch, data_ch in enumerate(up_comm):
-        poly[ch, :] = signal.lfilter(filt_comm[ch], 1, data_ch)
+        #  poly[ch, :] = signal.lfilter(filt_comm[ch], 1, data_ch)
+        poly[ch, :] = np.convolve(filt_comm[ch], data_ch, mode="same")
 
     # Do the vertical DFT
     channelized = np.fft.rfft(poly, axis=0)
