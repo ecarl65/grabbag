@@ -22,3 +22,5 @@ fudft
 fltk_hello
 Button
 run_udft
+.vscode
+__pycache__

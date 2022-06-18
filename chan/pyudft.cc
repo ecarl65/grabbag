@@ -24,7 +24,7 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(pyudft, m) {
     py::class_<PUDFT>(m, "pudft")
-        .def(py::init<int, int, float, bool, bool>(), "Args: Downsample, Filter Size, Sample Rate, Write Binary Output, Verbose")
+        .def(py::init<int, int, int, float, bool, bool>(), "Args: Downsample, Oversample, Filter Size, Sample Rate, Write Binary Output, Verbose")
         .def("poly_filt_design", &PUDFT::poly_filt_design, "Design and transform the filter")
         .def("run", &PUDFT::run, "Run with python array input")
         .def("pyrun", &PUDFT::pyrun, "Run with C array input")
