@@ -94,8 +94,7 @@ UDFT::UDFT(int downsamp, int oversamp, int n_filt, float samp_rate, bool write, 
 
   // {{{ FFT Plan Setup
   // Different approach, not upsampling/replicating
-  // XXX Darn, this won't work. Because of the delta between downsamp and n_channels the FFTs won't all be the right
-  // length. Looks like we'll have to do some copying after all. 
+  // XXX Looks like will need to have an input buffer that's longer than n_buffer. 
   fwd_c.n_size[0] = n_cols;
   fwd_c.rank = 1;
   fwd_c.howmany = n_channels;
@@ -269,8 +268,7 @@ std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
     if (debug) printf("Input index range: [%d, %d)\n", in_start, in_start + n_cols * downsamp);
 
     // Forward FFT of this buffer of data. If last buffer do zero padding.
-    // TODO Change this buffer_in and replace with the input array/matrix to the FFT that rearranges data.
-    // prepare_data(&indata[in_start], buffer_in)
+    // TODO Change this to make sure it is (oversamp - 1) * downsamp extra samples 
     if (n_full - in_start < n_buffer) {
       for (int m = 0; m < n_full - in_start; m++) buffer_in[m] = indata[in_start + m];
       for (int m = n_full - in_start; m < n_buffer; m++) buffer_in[m] = 0;
