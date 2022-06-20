@@ -109,7 +109,7 @@ UDFT::UDFT(int downsamp, int oversamp, int n_filt, float samp_rate, bool write, 
   filt_c.n_size[0] = n_cols;
   filt_c.rank = 1;
   filt_c.howmany = n_channels;
-  filt_c.idist = n_cols_filt;
+  filt_c.idist = n_cols;
   filt_c.odist = n_cols_fft;
   filt_c.istride = 1;
   filt_c.ostride = 1;
