@@ -35,7 +35,7 @@ class UDFT {
     // Variables
     int downsamp, oversamp, n_channels, n_filt;
     float samp_rate;
-    int n_buffer, n_cols_filt, n_cols_data, n_cols_filt_fft, n_cols_data_fft, n_channels_out;
+    int n_buffer, n_cols, n_cols_fft, n_channels_out;
     int n_tot_fft_data, n_tot_fft_filt, n_tot_out;
     int n_delay, n_delay_r, n_delay_samp;
     int idx_out_valid_r, idx_out_valid_samp, n_in_valid, n_out_valid_r, n_out_valid_samp;

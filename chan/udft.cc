@@ -43,16 +43,13 @@ UDFT::UDFT(int downsamp, int oversamp, int n_filt, float samp_rate, bool write, 
   n_buffer = (n_filt - 1) * 128;              // Size of the buffer, 8x filter size. TODO Make option.
 
   // Matrix sizes
-  n_cols_filt = n_buffer / downsamp;               // # of columns in FFT of polyphase data/filt across time
-  n_cols_data = n_buffer / n_channels;             // # of columns in FFT of polyphase data
-  n_cols_filt_fft = (n_cols_filt / 2 + 1);         // # of colums above except FFT output of real input
-  n_cols_data_fft = (n_cols_data / 2 + 1);         // # of colums above except FFT output of real input
+  n_cols = n_buffer / downsamp;               // # of columns in FFT of polyphase data/filt across time
+  n_cols_fft = (n_cols / 2 + 1);         // # of colums above except FFT output of real input
   n_channels_out = n_channels / 2 + 1;             // # output channels without redundancy
-  n_tot_fft_data = n_cols_data_fft * n_channels;   // Total # of output samples in FFT of data
-  n_tot_fft_filt = n_cols_filt_fft * n_channels;   // Total # of output samples in FFT of filter
-  n_tot_out = n_cols_filt * n_channels_out ;       // Total # of samples in output of modulating FFT across channels
+  n_tot_fft_filt = n_cols_fft * n_channels;   // Total # of output samples in FFT of filter
+  n_tot_out = n_cols * n_channels_out ;       // Total # of samples in output of modulating FFT across channels
 
-  // TODO Not sure if these should use downsamp or n_channels
+  // Delays and valid outputs
   n_delay = (n_filt - 1) >> 1;                            // Delay of filter at input rate
   n_delay_r = n_delay / downsamp;                         // Output delay of filter at output rate, so row of channelizer
   n_delay_samp = n_delay_r * n_channels_out;              // Output delay starting sample when output matrix is array
@@ -77,10 +74,8 @@ UDFT::UDFT(int downsamp, int oversamp, int n_filt, float samp_rate, bool write, 
     printf("Number of complex channels: %d\n", n_channels_out - 2);
     printf("Filter length: %d\n", n_filt);
     printf("Size of buffer: %d\n", n_buffer);
-    printf("Number of samples per output channel per buffer: %d\n", n_cols_filt);
-    printf("Number of samples per output channel per buffer in freq domain: %d\n", n_cols_filt_fft);
-    printf("Number of samples per channel per buffer ignoring oversampling: %d\n", n_cols_data);
-    printf("Number of samples per channel per buffer ignoring oversampling in freq domain: %d\n", n_cols_data_fft);
+    printf("Number of samples per output channel per buffer: %d\n", n_cols);
+    printf("Number of samples per output channel per buffer in freq domain: %d\n", n_cols_fft);
     printf("Number of samples in FFT of filter: %d\n", n_tot_fft_filt);
     printf("Number of samples in modulating FFT across channels: %d\n", n_tot_out);
     printf("Filter delay in samples at input rate: %d\n", n_delay);
@@ -98,46 +93,36 @@ UDFT::UDFT(int downsamp, int oversamp, int n_filt, float samp_rate, bool write, 
   // }}}
 
   // {{{ FFT Plan Setup
-  // Forward FFT of the data. Performs the polyphase decomposition via strides and distances
-  // of the FFTW plan.
-  fwd_c.n_size[0] = n_cols_data;
+  // Different approach, not upsampling/replicating
+  // XXX Darn, this won't work. Because of the delta between downsamp and n_channels the FFTs won't all be the right
+  // length. Looks like we'll have to do some copying after all. 
+  fwd_c.n_size[0] = n_cols;
   fwd_c.rank = 1;
   fwd_c.howmany = n_channels;
   fwd_c.idist = 1;
-  fwd_c.odist = n_cols_data_fft;
-  fwd_c.istride = n_channels;
+  fwd_c.odist = n_cols_fft;
+  fwd_c.istride = downsamp;
   fwd_c.ostride = 1;
   fwd_c.inembed = NULL;
   fwd_c.onembed = NULL;
 
-  // // Different approach, not upsampling/replicating
-  // fwd_c.n_size[0] = n_cols_filt;
-  // fwd_c.rank = 1;
-  // fwd_c.howmany = n_channels;
-  // fwd_c.idist = 1;
-  // fwd_c.odist = n_cols_filt_fft;
-  // fwd_c.istride = downsamp;
-  // fwd_c.ostride = 1;
-  // fwd_c.inembed = NULL;
-  // fwd_c.onembed = NULL;
-
   // Fwd FFT of the polyphase filter
-  filt_c.n_size[0] = n_cols_filt;
+  filt_c.n_size[0] = n_cols;
   filt_c.rank = 1;
   filt_c.howmany = n_channels;
   filt_c.idist = n_cols_filt;
-  filt_c.odist = n_cols_filt_fft;
+  filt_c.odist = n_cols_fft;
   filt_c.istride = 1;
   filt_c.ostride = 1;
   filt_c.inembed = NULL;
   filt_c.onembed = NULL;
 
   // Inverse FFT after multiplying the data and filter in the freq domain.
-  inv_c.n_size[0] = n_cols_filt;
+  inv_c.n_size[0] = n_cols;
   inv_c.rank = 1;
   inv_c.howmany = n_channels;
-  inv_c.idist = n_cols_filt_fft;
-  inv_c.odist = n_cols_filt;
+  inv_c.idist = n_cols_fft;
+  inv_c.odist = n_cols;
   inv_c.istride = 1;
   inv_c.ostride = 1;
   inv_c.inembed = NULL;
@@ -147,10 +132,10 @@ UDFT::UDFT(int downsamp, int oversamp, int n_filt, float samp_rate, bool write, 
   // The transpose makes it easier to skip the invalid samples and delayed samples.
   col_c.n_size[0] = n_channels;
   col_c.rank = 1;
-  col_c.howmany = n_cols_filt;
+  col_c.howmany = n_cols;
   col_c.idist = 1;
   col_c.odist = n_channels_out;
-  col_c.istride = n_cols_filt;
+  col_c.istride = n_cols;
   col_c.ostride = 1;
   col_c.inembed = NULL;
   col_c.onembed = NULL;
@@ -245,9 +230,9 @@ void UDFT::poly_filt_design()
   // Filter polyphase decomposition
   outidx = 0;
   for (int rho = 0; rho < n_channels; rho++) {
-    for (int n = 0; n < n_cols_filt; n++) {
+    for (int n = 0; n < n_cols; n++) {
       int inidx = n * downsamp - rho;
-      if (inidx < 0 || inidx >= n_filt) {
+      if (inidx < 0 || inidx >= n_filt || n % oversamp) {
         filt_full[outidx++] = 0;
       } else {
         filt_full[outidx++] = filt[inidx];
@@ -281,9 +266,11 @@ std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
   for (int idx = 0; idx < n_loops; idx++) {
     int in_start = n_in_valid * idx;
     int out_start_r = n_in_valid / downsamp * idx;
-    if (debug) printf("Input index range: [%d, %d)\n", in_start, in_start + n_cols_filt * downsamp);
+    if (debug) printf("Input index range: [%d, %d)\n", in_start, in_start + n_cols * downsamp);
 
     // Forward FFT of this buffer of data. If last buffer do zero padding.
+    // TODO Change this buffer_in and replace with the input array/matrix to the FFT that rearranges data.
+    // prepare_data(&indata[in_start], buffer_in)
     if (n_full - in_start < n_buffer) {
       for (int m = 0; m < n_full - in_start; m++) buffer_in[m] = indata[in_start + m];
       for (int m = n_full - in_start; m < n_buffer; m++) buffer_in[m] = 0;
@@ -295,9 +282,9 @@ std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
     // Compute circular convolution through multiplying in frequency domain.
     // Perform upsample by oversamp in frequency domain by wrapping onto spectral copies.
     for (int row = 0; row < n_channels; row++) {
-      for (int col = 0; col < n_cols_filt_fft; col++) {
-        int filt_idx = row * n_cols_filt_fft + col;
-        int data_idx = row * n_cols_data_fft + col % n_cols_data_fft;
+      for (int col = 0; col < n_cols_fft; col++) {
+        int filt_idx = row * n_cols_fft + col;
+        int data_idx = row * n_cols_fft + col % n_cols_fft;
         fft_mult[filt_idx] = fft_filt[filt_idx] * fft_in[data_idx];
       }
     }
@@ -308,12 +295,14 @@ std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
     // Perform FFT across channels to do modulation
     fftwf_execute(pudft);
 
+    // TODO Perform modulation of output (keep track of overall output time sample between buffers?)
+
     // Save only valid portion. Re-normalize inverse FFT.
     if (debug) printf("Copying from UDFT row %d to output row %d\n", idx_out_valid_r, out_start_r + n_delay_r);
     for (int r = 0; r < n_out_valid_r; r++) {
       for (int c = 0; c < n_channels_out; c++) {
         if (r + out_start_r + n_delay_r >= n_out_rows) break;
-        full_out[r + out_start_r + n_delay_r][c] = udft[n_channels_out * r + c + idx_out_valid_samp] / (float) n_cols_filt;
+        full_out[r + out_start_r + n_delay_r][c] = udft[n_channels_out * r + c + idx_out_valid_samp] / (float) n_cols;
       }
     }
   } // }}} End loop
