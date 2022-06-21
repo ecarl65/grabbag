@@ -242,6 +242,10 @@ void UDFT::poly_filt_design()
   // Filter FFT
   fftwf_execute(pfilt);
   fftwf_destroy_plan(pfilt);
+
+  // Save output
+  write_out("polyfilt.bin", (void *) &filt_full[0], sizeof(float), n_buffer * oversamp);
+
 } // }}}
 
 // {{{ run
