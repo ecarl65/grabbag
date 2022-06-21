@@ -40,7 +40,8 @@ UDFT::UDFT(int downsamp, int oversamp, int n_filt, float samp_rate, bool write, 
   // {{{ Variables and constants
   // Buffer sizes
   n_channels = oversamp * downsamp;         // Number of logical channels is oversamp amount times downsamp
-  n_buffer = (n_filt - 1) * 128;              // Size of the buffer, 8x filter size. TODO Make option.
+  n_buffer = (n_filt - 1) * 128;            // Size of the buffer, 8x filter size. TODO Make option.
+  n_extra = (oversamp - 1) * downsamp;      // Number of extra samples beyond n_buffer required 
 
   // Matrix sizes
   n_cols = n_buffer / downsamp;               // # of columns in FFT of polyphase data/filt across time
@@ -73,7 +74,8 @@ UDFT::UDFT(int downsamp, int oversamp, int n_filt, float samp_rate, bool write, 
     printf("Number of actual output channels: %d\n", n_channels_out);
     printf("Number of complex channels: %d\n", n_channels_out - 2);
     printf("Filter length: %d\n", n_filt);
-    printf("Size of buffer: %d\n", n_buffer);
+    printf("Logical size of buffer: %d\n", n_buffer);
+    printf("Physical size of buffer: %d\n", n_buffer + n_extra);
     printf("Number of samples per output channel per buffer: %d\n", n_cols);
     printf("Number of samples per output channel per buffer in freq domain: %d\n", n_cols_fft);
     printf("Number of samples in FFT of filter: %d\n", n_tot_fft_filt);
@@ -94,7 +96,6 @@ UDFT::UDFT(int downsamp, int oversamp, int n_filt, float samp_rate, bool write, 
 
   // {{{ FFT Plan Setup
   // Different approach, not upsampling/replicating
-  // XXX Looks like will need to have an input buffer that's longer than n_buffer. 
   fwd_c.n_size[0] = n_cols;
   fwd_c.rank = 1;
   fwd_c.howmany = n_channels;
@@ -142,9 +143,9 @@ UDFT::UDFT(int downsamp, int oversamp, int n_filt, float samp_rate, bool write, 
 
   // {{{ Arrays
   filt = fftwf_alloc_real(n_filt);
-  buffer_in = fftwf_alloc_real(n_buffer);
+  buffer_in = fftwf_alloc_real(n_buffer + n_extra);
   filt_full = fftwf_alloc_real(n_buffer * oversamp);
-  fft_in = reinterpret_cast<cfloat*>(fftwf_alloc_complex(n_tot_fft_data));
+  fft_in = reinterpret_cast<cfloat*>(fftwf_alloc_complex(n_tot_fft_filt));
   fft_filt = reinterpret_cast<cfloat*>(fftwf_alloc_complex(n_tot_fft_filt));
   conv_out = fftwf_alloc_real(n_buffer * oversamp);
   fft_mult = reinterpret_cast<cfloat*>(fftwf_alloc_complex(n_tot_fft_filt));
@@ -220,7 +221,6 @@ void UDFT::poly_filt_design()
     }
 
     // Hamming window and normalization
-    // filt[outidx] *= (0.54 - 0.46 * cos(2 * M_PI * outidx / n_filt));
     filt[outidx] *= ((25.0 / 46.0) - (21.0 / 46.0) * cos(2 * M_PI * outidx / n_filt));
     filt_sum += filt[outidx++];
   }
@@ -269,23 +269,16 @@ std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
 
     // Forward FFT of this buffer of data. If last buffer do zero padding.
     // TODO Change this to make sure it is (oversamp - 1) * downsamp extra samples 
-    if (n_full - in_start < n_buffer) {
+    if (n_full - in_start < n_buffer + n_extra) {
       for (int m = 0; m < n_full - in_start; m++) buffer_in[m] = indata[in_start + m];
-      for (int m = n_full - in_start; m < n_buffer; m++) buffer_in[m] = 0;
+      for (int m = n_full - in_start; m < n_buffer + n_extra; m++) buffer_in[m] = 0;
       fftwf_execute_dft_r2c(psig, buffer_in, reinterpret_cast<fftwf_complex*>(fft_in));
     } else {
       fftwf_execute_dft_r2c(psig, &indata[in_start], reinterpret_cast<fftwf_complex*>(fft_in));
     }
 
     // Compute circular convolution through multiplying in frequency domain.
-    // Perform upsample by oversamp in frequency domain by wrapping onto spectral copies.
-    for (int row = 0; row < n_channels; row++) {
-      for (int col = 0; col < n_cols_fft; col++) {
-        int filt_idx = row * n_cols_fft + col;
-        int data_idx = row * n_cols_fft + col % n_cols_fft;
-        fft_mult[filt_idx] = fft_filt[filt_idx] * fft_in[data_idx];
-      }
-    }
+    for (int m = 0; m < n_tot_fft_filt; m++) fft_mult[m] = fft_filt[m] * fft_in[m];
 
     // Perform inverse FFT to get real data out of convolution
     fftwf_execute(pinv);
@@ -293,7 +286,7 @@ std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
     // Perform FFT across channels to do modulation
     fftwf_execute(pudft);
 
-    // TODO Perform modulation of output (keep track of overall output time sample between buffers?)
+    // TODO Perform modulation of output (keep track of overall output time sample between buffers? Or constrain n_out_valid to be multiple of oversamp?)
 
     // Save only valid portion. Re-normalize inverse FFT.
     if (debug) printf("Copying from UDFT row %d to output row %d\n", idx_out_valid_r, out_start_r + n_delay_r);
@@ -315,7 +308,7 @@ std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
     for (size_t m = 1; m < full_out.size(); m++) {
       write_append("channelized.bin", (void *) &full_out[m][0], sizeof(fftwf_complex), full_out[m].size());
     }
-    write_out("fftdata.bin", (void *) &fft_in[0], sizeof(fftwf_complex), n_tot_fft_data);
+    write_out("fftdata.bin", (void *) &fft_in[0], sizeof(fftwf_complex), n_tot_fft_filt);
     write_out("fftfilt.bin", (void *) &fft_filt[0], sizeof(fftwf_complex), n_tot_fft_filt);
   } // }}}
 
