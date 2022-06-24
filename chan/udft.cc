@@ -40,7 +40,7 @@ UDFT::UDFT(int downsamp, int oversamp, int n_filt, float samp_rate, bool write, 
   // {{{ Variables and constants
   // Buffer sizes
   n_channels = oversamp * downsamp;         // Number of logical channels is oversamp amount times downsamp
-  n_buffer = (n_filt - 1) * 128;            // Size of the buffer, 8x filter size. TODO Make option.
+  n_buffer = (n_filt - 1) * 4;            // Size of the buffer, 8x filter size. TODO Make option.
   n_extra = (oversamp - 1) * downsamp;      // Number of extra samples beyond n_buffer required 
 
   // Matrix sizes
@@ -261,7 +261,8 @@ std::vector<std::vector<cfloat>> UDFT::run(float *indata, int n_full)
   }
 
   // {{{ Processing loop. TODO: Move this to a function and output each loop only.
-  const int n_loops = (n_full + n_in_valid - 1) / n_in_valid;  // Ceiling operation
+  // const int n_loops = (n_full + n_in_valid - 1) / n_in_valid;  // Ceiling operation
+  const int n_loops = n_full / n_in_valid;  // Floor operation, throw extra out
   if (debug) {
     printf("Input data length: %d\n", n_full);
     printf("Number of loops: %d\n", n_loops);
