@@ -31,13 +31,14 @@ class Noise:
         self.pad = pad
         self.no_plots = no_plots
         self.psd_type = psd_type
+        self.nperseg = 32
 
         # Input signal and noise
         self.time = np.arange(self.num_samps) / self.samp_rate
         self.freq_0 = self.samp_rate / self.nfft * 10.00  # Alter fractional part to hit bin center or not
         self.complex_noise = cnormal(len(self.time)) * 10 ** (-self.snr / 20)
-        self.complex_signal = np.exp(1j * 2 * np.pi * self.freq_0 * self.time)
-        # self.complex_signal = 1
+        #  self.complex_signal = np.exp(1j * 2 * np.pi * self.freq_0 * self.time)
+        self.complex_signal = 1
         if self.psd_type == "stft":
             self.complex_signal *= np.r_[np.ones(self.num_signal), np.zeros(self.num_samps - self.num_signal)]
         self.spn = self.complex_signal + self.complex_noise
@@ -48,8 +49,6 @@ class Noise:
 
         # Better to do both sides but for now just get noise stats on one side of signal
         self.ncutoff = int(self.pad * 0.4)
-
-        self.nperseg = 16
 
     # }}}
 
@@ -130,7 +129,6 @@ class Noise:
         win = signal.windows.hann(self.nperseg)
         win /= np.sum(win)
         freqs, times, stft = signal.stft(self.spn, window=win, fs=self.samp_rate, nperseg=self.nperseg, return_onesided=False)
-        #  freqs, times, stft = signal.stft(self.spn, window="hamming", fs=self.samp_rate, nperseg=self.nperseg, return_onesided=False)
         stft[:, 1::2] *= -1
         stft = np.fft.fftshift(stft, axes=0)
         freqs = np.fft.fftshift(freqs)
@@ -140,7 +138,7 @@ class Noise:
         out_var  = np.var(stft[:, stft.shape[1]//2 + 1:], axis=1)
         filt_freqs, freq_response = signal.freqz(win, 1, fs=self.samp_rate)
         neb = np.trapz(np.abs(freq_response / np.max(freq_response)) ** 2, filt_freqs)
-        print(f"Ratio of input noise std to outout: {full_var / np.median(out_var)}")
+        print(f"Ratio of input noise var to outout: {full_var / np.median(out_var)}")
         print(f"Ratio of half sample rate to NEB cutoff: {self.samp_rate / 2 / neb}")
 
         # Plot the data in various ways
