@@ -12,23 +12,25 @@ def cnormal(N):
     return np.dot(np.random.randn(N, 2), [1 / np.sqrt(2), 1j / np.sqrt(2)])
 
 def a2db(x):
-    return 20 * np.log10(np.abs(x))
+    return 20 * np.log10(np.abs(x) + 1e-8)
 
 def p2db(x):
-    return 10 * np.log10(np.abs(x))
+    return 10 * np.log10(np.abs(x) + 1e-8)
 
 # {{{ Noise
 class Noise:
 
     # {{{ __init__
-    def __init__(self, num_samps, samp_rate, snr, nfft, pad, no_plots=False):
+    def __init__(self, num_samps, samp_rate, snr, nfft, pad, no_plots=False, psd_type="psd"):
         self.num_samps = num_samps
+        self.num_signal = num_samps // 2
         self.samp_rate = samp_rate
         self.snr = snr
         self.nfft = nfft
         self.overlap = nfft // 2
         self.pad = pad
         self.no_plots = no_plots
+        self.psd_type = psd_type
 
         # Input signal and noise
         self.time = np.arange(self.num_samps) / self.samp_rate
@@ -36,6 +38,8 @@ class Noise:
         self.complex_noise = cnormal(len(self.time)) * 10 ** (-self.snr / 20)
         self.complex_signal = np.exp(1j * 2 * np.pi * self.freq_0 * self.time)
         # self.complex_signal = 1
+        if self.psd_type == "stft":
+            self.complex_signal *= np.r_[np.ones(self.num_signal), np.zeros(self.num_samps - self.num_signal)]
         self.spn = self.complex_signal + self.complex_noise
 
         # Expected gains and SNRs
@@ -45,10 +49,12 @@ class Noise:
         # Better to do both sides but for now just get noise stats on one side of signal
         self.ncutoff = int(self.pad * 0.4)
 
+        self.nperseg = 16
+
     # }}}
 
-    # {{{ run
-    def run(self):
+    # {{{ run_psd
+    def run_psd(self):
 
         # To normalize all outputs the same treat FFT like multiplying by rect window and normalize "filter"
         h_rect = np.ones(self.nfft) / self.nfft
@@ -106,6 +112,59 @@ class Noise:
 
     # }}}
 
+    # {{{ run
+    def run(self):
+        if self.psd_type == "psd":
+            self.run_psd()
+        elif self.psd_type == "stft":
+            self.run_stft()
+        else:
+            raise RuntimeError("No valid run method chosen")
+    # }}}
+
+    # {{{ run_stft
+    def run_stft(self):
+
+        # Compute STFT
+        #  win = np.ones(self.nperseg) / self.nperseg
+        win = signal.windows.hann(self.nperseg)
+        win /= np.sum(win)
+        freqs, times, stft = signal.stft(self.spn, window=win, fs=self.samp_rate, nperseg=self.nperseg, return_onesided=False)
+        #  freqs, times, stft = signal.stft(self.spn, window="hamming", fs=self.samp_rate, nperseg=self.nperseg, return_onesided=False)
+        stft[:, 1::2] *= -1
+        stft = np.fft.fftshift(stft, axes=0)
+        freqs = np.fft.fftshift(freqs)
+
+        # Compute stats
+        full_var = np.var(self.complex_noise)
+        out_var  = np.var(stft[:, stft.shape[1]//2 + 1:], axis=1)
+        filt_freqs, freq_response = signal.freqz(win, 1, fs=self.samp_rate)
+        neb = np.trapz(np.abs(freq_response / np.max(freq_response)) ** 2, filt_freqs)
+        print(f"Ratio of input noise std to outout: {full_var / np.median(out_var)}")
+        print(f"Ratio of half sample rate to NEB cutoff: {self.samp_rate / 2 / neb}")
+
+        # Plot the data in various ways
+        if not self.no_plots:
+            plt.close("all")
+            fig, axs = plt.subplots(2, figsize=(24,12), tight_layout=True)
+            axs[0].plot(self.time, a2db(self.complex_signal), color="k", linewidth=2, label="Full Rate Signal")
+            axs[0].plot(self.time, a2db(self.complex_noise), color="dimgray", linewidth=2, label="Full Rate Noise", alpha=0.5)
+            axs[0].plot(times, a2db(stft.T), alpha=1.0)
+            axs[0].set_title("Time Domain STFT Output")
+            axs[0].set_xlabel("Time (sec)")
+            axs[0].set_ylabel("Power (dB)")
+            axs[0].legend()
+
+            axs[1].grid(False)
+            pcm = axs[1].pcolormesh(times, freqs, a2db(stft), shading="auto")
+            axs[1].set_xlabel("Time (sec)")
+            axs[1].set_ylabel("Freq (Hz)")
+            axs[1].set_title("STFT Power (dB)")
+            fig.colorbar(pcm, ax=axs[1])
+            plt.show()
+
+    # }}}
+
 # }}}
 
 # {{{ __main__
@@ -117,13 +176,13 @@ if __name__ == "__main__":
     parser.add_argument("--sample-rate", help="Sample rate (Hz)", action="store", type=float, dest="sample_rate", default=2.5e6)
     parser.add_argument("--num-samples", help="Number of samples", action="store", type=float, default=8192)
     parser.add_argument("--nfft", help="Number of input data samples per FFT", type=int, default=1024)
-    parser.add_argument("--pad", help="Size of FFT, greater than or equal to nfft", type=int, default=1024)
+    parser.add_argument("-p", "--pad", help="Size of FFT, greater than or equal to nfft", type=int, default=1024)
     parser.add_argument("-s", "--snr", help="SNR in dB", type=float, default=20)
     parser.add_argument("-n", "--no-plot", help="Set to suppress plotting", action="store_true")
+    parser.add_argument("-t", "--type", help="Which method to run", choices=["psd", "stft"], default="psd")
     opts = parser.parse_args()
 
-    sig_noise = Noise(opts.num_samples, opts.sample_rate, opts.snr, opts.nfft, opts.pad, opts.no_plot)
-
+    sig_noise = Noise(opts.num_samples, opts.sample_rate, opts.snr, opts.nfft, opts.pad, opts.no_plot, opts.type)
     sig_noise.run()
 
 # }}}
