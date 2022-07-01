@@ -146,21 +146,29 @@ class Noise:
         # Plot the data in various ways
         if not self.no_plots:
             plt.close("all")
-            fig, axs = plt.subplots(2, figsize=(24,12), tight_layout=True)
-            axs[0].plot(self.time, a2db(self.complex_signal), color="k", linewidth=2, label="Full Rate Signal")
-            axs[0].plot(self.time, a2db(self.complex_noise), color="dimgray", linewidth=2, label="Full Rate Noise", alpha=0.5)
-            axs[0].plot(times, a2db(stft.T), alpha=1.0)
-            axs[0].set_title("Time Domain STFT Output")
+            fig, axs = plt.subplots(3, figsize=(24,12), tight_layout=True)
+
+            axs[0].grid(False)
+            pcm = axs[0].pcolormesh(times, freqs, a2db(stft), shading="auto")
             axs[0].set_xlabel("Time (sec)")
-            axs[0].set_ylabel("Power (dB)")
+            axs[0].set_ylabel("Freq (Hz)")
+            axs[0].set_title("STFT Power (dB)")
+            fig.colorbar(pcm, ax=axs[0])
+
+            axs[1].plot(self.time, a2db(self.complex_signal), color="k", linewidth=2, label="Full Rate Signal")
+            axs[1].plot(self.time, a2db(self.complex_noise), color="dimgray", linewidth=2, label="Full Rate Noise", alpha=0.5)
+            axs[1].plot(times, a2db(stft.T), alpha=1.0)
+            axs[1].set_title("Time Domain STFT Output")
+            axs[1].set_xlabel("Time (sec)")
+            axs[1].set_ylabel("Power (dB)")
             axs[0].legend()
 
-            axs[1].grid(False)
-            pcm = axs[1].pcolormesh(times, freqs, a2db(stft), shading="auto")
-            axs[1].set_xlabel("Time (sec)")
-            axs[1].set_ylabel("Freq (Hz)")
-            axs[1].set_title("STFT Power (dB)")
-            fig.colorbar(pcm, ax=axs[1])
+            axs[2].grid(True)
+            axs[2].plot(freqs, np.mean(a2db(stft), axis=1))
+            axs[2].set_title("Freq Domain STFT Output")
+            axs[2].set_xlabel("Frequency (Hz)")
+            axs[2].set_ylabel("Power (dB)")
+
             plt.show()
 
     # }}}
