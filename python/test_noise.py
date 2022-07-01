@@ -26,6 +26,7 @@ class Noise:
         self.samp_rate = samp_rate
         self.snr = snr
         self.nfft = nfft
+        self.overlap = nfft // 2
         self.pad = pad
         self.no_plots = no_plots
 
@@ -56,14 +57,16 @@ class Noise:
         # My own periodogram. Normalize filter as well for same peak power. No overlap.
         win = signal.windows.hamming(self.nfft)
         win /= np.sum(win)
-        n_loops = int(self.num_samps / self.nfft)
+        n_loops = int(self.num_samps / self.overlap) - 1
         SPN_per = np.zeros(self.pad)
+        new_samps = self.nfft - self.overlap
         for iter in range(n_loops):
-            SPN_per += np.abs(np.fft.fftshift(np.fft.fft(win * self.spn[iter * self.nfft : (iter + 1) * self.nfft], self.pad)))**2
+            data = self.spn[iter * new_samps : iter * new_samps + self.nfft]
+            SPN_per += np.abs(np.fft.fftshift(np.fft.fft(win * data, self.pad)))**2
         SPN_per /= n_loops
 
         # Matlab PSD
-        Pxx, freqs = psd(self.spn, Fs=self.samp_rate, NFFT=self.nfft, sides="twosided", noverlap=0,
+        Pxx, freqs = psd(self.spn, Fs=self.samp_rate, NFFT=self.nfft, sides="twosided", noverlap=self.overlap,
                          pad_to=self.pad, scale_by_freq=False)
 
         # Plot results
