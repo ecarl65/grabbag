@@ -1,6 +1,37 @@
 #!/usr/bin/env python3
 """This is both a class and a test script for the Dave Sharpin version of the 2x 
-oversampled channelizer."""
+oversampled channelizer.
+
+Trying to adjust this to be the Crochiere and Rabiner version instead of
+Sharpin. Because the C&R one requires no shuffling of input data above what
+can be done via strides and distances in FFTW.
+
+For M = 3, K = 6, I = 2
+Sharpin Forumalation:
+    Data & Filter:
+        x_p(n) = x(nM - p)
+        h(nM + p) for n=2I, else 0
+
+        x0  x3  x6  x9  x12 x15  |  h0  0   h6  0   h12 0
+        x-1 x2  x5  x8  x11 x14  |  h1  0   h7  0   h13 0
+        x-2 x1  x4  x7  x10 x13  |  h2  0   h8  0   h14 0
+        x-3 x0  x3  x6  x9  x12  |  h3  0   h9  0   h15 0
+        x-4 x-1 x2  x5  x8  x11  |  h4  0   h10 0   h16 0
+        x-5 x-2 x1  x4  x7  x10  |  h5  0   h11 0   h17 0
+
+Crochiere & Rabiner Forumulation:
+    Data:
+        x_p(n) = x(nM + p)
+        h(nM - p) for n=2I, else 0
+
+        x0  x3  x6  x9  x12 x15  |  h0  0   h6  0   h12 0
+        x1  x4  x7  x10 x13 x16  |  h-1 0   h5  0   h11 0
+        x2  x5  x8  x11 x14 x17  |  h-2 0   h4  0   h10 0
+        x3  x6  x9  x12 x15 x18  |  h-3 0   h3  0   h9  0
+        x4  x7  x10 x13 x16 x19  |  h-4 0   h2  0   h8  0
+        x5  x8  x11 x14 x17 x20  |  h-5 0   h1  0   h7  0
+
+"""
 
 from copy import deepcopy
 import numpy as np
