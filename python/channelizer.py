@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""This is both a class and a test script for the Dave Sharpin version of the 2x 
+"""This is both a class and a test script for the Dave Sharpin version of the 2x
 oversampled channelizer.
 
 Trying to adjust this to be the Crochiere and Rabiner version instead of
@@ -102,31 +102,30 @@ class Channelizer:
         self.delay_delta = self.out_skip / (tmp_fs / self.decimation) - self.grp_delay
         print(f"Group delay: {self.grp_delay}, output samples: {self.grp_delay * tmp_fs / self.decimation}")
 
-        e_cs = np.reshape(
-                self.proto_filt,
-                (self.num_channels, int(len(self.proto_filt) / self.num_channels)),
-                order="F",
-        )
         up_size = int(len(self.proto_filt) / self.num_channels * 2)
         self.poly_filt = np.zeros((self.num_channels, up_size))
-        self.poly_filt[:, ::2] = e_cs
+
+        decimation = self.num_channels >> 1
+        for idx in range(self.poly_filt.shape[1]):
+            for chan in range(self.poly_filt.shape[0]):
+                in_idx = idx * decimation - chan
+                if idx % 2 == 0 and 0 <= in_idx < len(self.proto_filt):
+                        self.poly_filt[chan, idx] = self.proto_filt[in_idx]
+
 
     # }}}
 
     # {{{ _prepare_data
     def _prepare_data(self, data):
+        """Ignore last few samples"""
 
-        half_channels = self.num_channels >> 1
-        new_len = int(int(data.size / half_channels) * half_channels) + 1
-        new_len = new_len - half_channels if new_len > len(data) else new_len
-        num_columns = np.ceil((new_len - 1) / half_channels).astype(int) + 2
-
+        decimation = self.num_channels >> 1
+        new_len = (len(data) // decimation) * decimation
+        num_columns = ((new_len - 1) // decimation) + 1
         data_poly = np.zeros((self.num_channels, num_columns))
-        tmp_data = np.flipud(np.reshape(data[1:new_len], (half_channels, num_columns - 2), order="F"))
-        data_poly[:half_channels, 1:-1] = tmp_data
-        data_poly[half_channels:, 2:] = deepcopy(tmp_data)
-        data_poly[0, 0] = data[0]
-        data_poly[half_channels, 1] = data[0]
+        tmp_data = np.reshape(data[:new_len], (decimation, -1), order="F")
+        data_poly[:decimation, :] = tmp_data
+        data_poly[decimation:, :-1] = deepcopy(tmp_data[:, 1:])
 
         return data_poly
 
@@ -183,20 +182,34 @@ if __name__ == "__main__":
     time_series = np.arange(time_max + 1) * out_per + out_per / 2
     channs = np.arange(chan_max + 1) + 0.5
 
-    fig, axs = plt.subplots(2)
-    axs[0].grid(False)
-    axs[0].pcolormesh(time_series, channs, np.abs(v_sig))
-    axs[0].set_xlabel("Time")
-    axs[0].set_ylabel("Channel")
-    axs[0].set_title("Channelizer Output Power")
+    plt.rcParams["axes.grid"] = False
+    fig, axs = plt.subplots(2, 2)
+    axs[0, 0].grid(False)
+    axs[0, 0].pcolormesh(time_series, channs, np.abs(v_sig))
+    axs[0, 0].set_xlabel("Time")
+    axs[0, 0].set_ylabel("Channel")
+    axs[0, 0].set_title("Channelizer Output Power")
 
-    axs[1].grid(True)
+    axs[1, 0].grid(True)
     d = v_sig[1:3, :]
     dd = np.angle(d[:, 1:] * np.conj(d[:, :-1]))
-    axs[1].plot(time_series[:-2], dd.T)
-    axs[1].set_xlabel("Time")
-    axs[1].set_ylabel("Channel")
-    axs[1].set_title("Two Channels Phase DCM")
+    axs[1, 0].plot(time_series[:-2], dd.T)
+    axs[1, 0].set_xlabel("Time")
+    axs[1, 0].set_ylabel("Channel")
+    axs[1, 0].set_title("Two Channels Phase DCM")
+    axs[1, 0].grid(True)
+
+    axs[0, 1].plot(time_series[:-1], 20 * np.log10(np.abs(v_sig).T))
+    axs[0, 1].set_title("Amplitude per Channel")
+    axs[0, 1].set_xlabel("Time")
+    axs[0, 1].set_ylabel("Amplitude (dB)")
+    axs[0, 1].grid(True)
+
+    pcm = axs[1, 1].pcolormesh(chann.poly_filt)
+    axs[1, 1].set_title("Polyphase Filter Decomp")
+    axs[1, 1].set_xlabel("Time")
+    axs[1, 1].set_ylabel("Channel")
+    fig.colorbar(pcm, ax=axs[1, 1])
 
     plt.tight_layout()
     plt.show()
