@@ -205,11 +205,12 @@ if __name__ == "__main__":
     axs[0, 1].set_ylabel("Amplitude (dB)")
     axs[0, 1].grid(True)
 
-    pcm = axs[1, 1].pcolormesh(chann.poly_filt)
+    axs[1, 1].plot(chann.poly_filt.T)
     axs[1, 1].set_title("Polyphase Filter Decomp")
     axs[1, 1].set_xlabel("Time")
-    axs[1, 1].set_ylabel("Channel")
-    fig.colorbar(pcm, ax=axs[1, 1])
+    axs[1, 1].set_ylabel("Amplitude")
+    axs[1, 1].grid(True)
+    axs[1, 1].legend()
 
     plt.tight_layout()
     plt.show()
