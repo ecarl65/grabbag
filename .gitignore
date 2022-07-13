@@ -24,3 +24,4 @@ Button
 run_udft
 .vscode
 __pycache__
+cscope.*
