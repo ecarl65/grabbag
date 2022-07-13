@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,7 +8,10 @@ from matplotlib import rcParams
 from scipy import signal
 from pprint import pprint as pp
 from shutil import get_terminal_size
+sys.path.append(os.path.join(os.path.dirname(__file__), "../python"))
+from channelizer import Channelizer
 np.set_printoptions(linewidth=get_terminal_size()[0])
+
 
 # {{{ do_channelizer
 def do_channelizer(downsample, oversample, sample_rate, filt, input_signal):
@@ -15,42 +19,48 @@ def do_channelizer(downsample, oversample, sample_rate, filt, input_signal):
 
     n_channels = downsample * oversample
 
-    # Perform reshaping
-    in_comm = np.reshape(
-            np.r_[input_signal, np.zeros(n_channels - (len(input_signal) % n_channels))], 
-            (n_channels, -1),
-            order="F"
-    )
+    if oversample == 2:
 
-    # Perform upsample
-    up_comm = np.zeros((n_channels, in_comm.shape[1] * oversample))
-    for chan in range(in_comm.shape[0]):
-        up_comm[chan, ::oversample] = in_comm[chan, :]
+        crudft = Channelizer(sample_rate, downsample, 0)
+        channelized = crudft.channelize(input_signal)
 
-    # Create filter
-    filt_len = int(np.ceil(len(filt) / downsample) * downsample + n_channels)
-    filt_cols = int(filt_len / downsample)
-    filt_comm = np.zeros((n_channels, filt_cols))
-    for rho in range(filt_comm.shape[0]):
-        for ds_samp in range(filt_comm.shape[1]):
-            idx = ds_samp * downsample - rho
-            if 0 <= idx < len(filt):
-                filt_comm[rho, ds_samp] = filt[idx]
+    else:
 
-    print("Filter:")
-    pp(filt_comm)
+        # Perform reshaping
+        in_comm = np.reshape(
+                np.r_[input_signal, np.zeros(n_channels - (len(input_signal) % n_channels))],
+                (n_channels, -1),
+                order="F")
 
-    print("Data:")
-    pp(up_comm[:, :10])
+        # Perform upsample
+        up_comm = np.zeros((n_channels, in_comm.shape[1] * oversample))
+        for chan in range(in_comm.shape[0]):
+            up_comm[chan, ::oversample] = in_comm[chan, :]
 
-    # Do the filtering
-    poly = np.zeros_like(up_comm)
-    for ch, data_ch in enumerate(up_comm):
-        #  poly[ch, :] = signal.lfilter(filt_comm[ch], 1, data_ch)
-        poly[ch, :] = np.convolve(filt_comm[ch], data_ch, mode="same")
+        # Create filter
+        filt_len = int(np.ceil(len(filt) / downsample) * downsample + n_channels)
+        filt_cols = int(filt_len / downsample)
+        filt_comm = np.zeros((n_channels, filt_cols))
+        for rho in range(filt_comm.shape[0]):
+            for ds_samp in range(filt_comm.shape[1]):
+                idx = ds_samp * downsample - rho
+                if 0 <= idx < len(filt):
+                    filt_comm[rho, ds_samp] = filt[idx]
 
-    # Do the vertical DFT
-    channelized = np.fft.rfft(poly, axis=0)
+        print("Filter:")
+        pp(filt_comm)
+
+        print("Data:")
+        pp(up_comm[:, :10])
+
+        # Do the filtering
+        poly = np.zeros_like(up_comm)
+        for ch, data_ch in enumerate(up_comm):
+            #  poly[ch, :] = signal.lfilter(filt_comm[ch], 1, data_ch)
+            poly[ch, :] = np.convolve(filt_comm[ch], data_ch, mode="same")
+
+        # Do the vertical DFT
+        channelized = np.fft.rfft(poly, axis=0)
 
     # plot_channelizer
     plot_channelizer(downsample, oversample, sample_rate, filt, input_signal, channelized.T)
@@ -62,6 +72,10 @@ def plot_channelizer(downsample, oversample, sample_rate, filt, input_signal, ch
 
     n_channels = downsample * oversample
 
+    filt_up = np.zeros(len(filt) * oversample)
+    filt_up[::oversample] = filt
+    filt = filt_up
+
     rcParams["axes.grid"] = False
     fig, axs = plt.subplots(3, 2)
     axs[0, 0].plot(filt)
@@ -72,10 +86,11 @@ def plot_channelizer(downsample, oversample, sample_rate, filt, input_signal, ch
     tin = np.arange(len(input_signal)) / sample_rate
     tfilt = np.arange(len(filt)) / sample_rate
 
+
     for fc in fc_list:
         w, h = signal.freqz(filt * np.exp(1j * 2 * np.pi * fc * tfilt), 1, fs=sample_rate, whole=False)
         axs[1, 0].plot(w, 20*np.log10(np.abs(h)))
-        axs[1, 0].plot([1250/2, 1250/2], [-100, 0], "r:")
+        #  axs[1, 0].plot([1250/2, 1250/2], [-100, 0], "r:")
         axs[1, 0].plot([fc, fc], [-100, 0], "m:")
     axs[1, 0].set_title("Channelizer Frequency Response")
     axs[1, 0].set_xlabel("Frequency (Hz)")
@@ -127,22 +142,21 @@ def plot_channelizer(downsample, oversample, sample_rate, filt, input_signal, ch
 
 # {{{ main
 def main(downsample, oversample, sample_rate, run):
-    M = downsample
-    I = oversample
-    K = M * I
-    Kh = K // 2 + 1
+    """Main entry point"""
+    num_channels = downsample * oversample
+    half_channels = num_channels // 2 + 1
 
     indata = np.fromfile("input.bin", dtype=np.float32)
-    outdata = np.fromfile("filtered.bin", dtype=np.float32)
-    channelized = np.reshape(np.fromfile("channelized.bin", dtype=np.complex64), (-1, Kh))
-    chann_buf = np.reshape(np.fromfile("onebuffer.bin", dtype=np.complex64), (-1, Kh))
     filt = np.fromfile("filter.bin", dtype=np.float32)
-    fdata = np.reshape(np.fromfile("fftdata.bin", dtype=np.complex64), (K, -1))
-    ffilt = np.reshape(np.fromfile("fftfilt.bin", dtype=np.complex64), (K, -1))
 
     if run:
         do_channelizer(downsample, oversample, sample_rate, filt, indata)
     else:
+        #  outdata = np.fromfile("filtered.bin", dtype=np.float32)
+        channelized = np.reshape(np.fromfile("channelized.bin", dtype=np.complex64), (-1, half_channels))
+        #  chann_buf = np.reshape(np.fromfile("onebuffer.bin", dtype=np.complex64), (-1, half_channels))
+        #  fdata = np.reshape(np.fromfile("fftdata.bin", dtype=np.complex64), (num_channels, -1))
+        #  ffilt = np.reshape(np.fromfile("fftfilt.bin", dtype=np.complex64), (num_channels, -1))
         plot_channelizer(downsample, oversample, sample_rate, filt, indata, channelized)
 
 # }}}

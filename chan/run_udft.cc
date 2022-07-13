@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
   int downsamp = 8;
   int oversamp = 1;
   int filt_ord = 8;
-  int full_ord = 11;
+  int full_ord = 12;
   float samp_rate = 10e3;
   bool debug = false;
   bool write = false;

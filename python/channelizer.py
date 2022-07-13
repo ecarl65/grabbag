@@ -161,10 +161,10 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Test Channelizer", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("--sample-rate", help="Sample rate (Hz)", action="store", type=float, dest="sample_rate", default=800)
-    parser.add_argument("--overlap", help="Overlap (Hz)", action="store", type=float, default=1)
-    parser.add_argument("--decimation", help="Decimation factor", action="store", type=int, default=32)
-    parser.add_argument("--num-points", help="Number of test input points", action="store", type=int, dest="num_points", default=100000)
+    parser.add_argument("-s", "--sample-rate", help="Sample rate (Hz)", action="store", type=float, dest="sample_rate", default=800)
+    parser.add_argument("-o", "--overlap", help="Overlap (Hz)", action="store", type=float, default=1)
+    parser.add_argument("-d", "--decimation", help="Decimation factor", action="store", type=int, default=32)
+    parser.add_argument("-n", "--num-points", help="Number of test input points", action="store", type=int, dest="num_points", default=100000)
     opts = parser.parse_args()
 
     time = np.arange(opts.num_points) / opts.sample_rate
