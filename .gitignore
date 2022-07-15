@@ -25,3 +25,4 @@ run_udft
 .vscode
 __pycache__
 cscope.*
+node_modules
