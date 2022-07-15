@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
-import Form from "@rjsf/core";
+// import Form from "@rjsf/core";
+import Form from '@rjsf/bootstrap-4';
 // import App from './App';
 
 // ReactDOM.render(
@@ -95,7 +96,7 @@ const root = createRoot(rootElement);
 
 root.render(
   <Form schema={schema}
-        // onChange={onFormChange}
+        onChange={onFormChange}
         // onChange={log("changed")}
         // onSubmit={log("submitted")}
         onSubmit={onFormSubmit}
