@@ -19,13 +19,59 @@ import Form from "@rjsf/core";
 //   }
 // };
 
+// const schema_txt = `{
+//   "title": "Todo",
+//   "type": "object",
+//   "required": ["title"],
+//   "properties": {
+//     "title": {"type": "string", "title": "Title", "default": "A new task"},
+//     "done": {"type": "boolean", "title": "Done?", "default": false}
+//   }
+// }`;
+
 const schema_txt = `{
-  "title": "Todo",
+  "title": "A registration form",
+  "description": "A simple form example.",
   "type": "object",
-  "required": ["title"],
+  "required": [
+    "firstName",
+    "lastName"
+  ],
   "properties": {
-    "title": {"type": "string", "title": "Title", "default": "A new task"},
-    "done": {"type": "boolean", "title": "Done?", "default": false}
+    "firstName": {
+      "type": "string",
+      "title": "First name",
+      "default": "Chuck"
+    },
+    "lastName": {
+      "type": "string",
+      "title": "Last name"
+    },
+    "telephone": {
+      "type": "string",
+      "title": "Telephone",
+      "minLength": 10
+    },
+    "modes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/sub-array" },
+      "description": "Modes"
+    }
+  },
+  "$defs": {
+    "sub-array": {
+      "type": "object",
+      "properties": {
+        "field1": {
+          "type": "number",
+          "description": "field 1"
+        },
+        "field2": {
+          "type": "string",
+          "description": "field 2"
+        }
+      }
+    }
   }
 }`;
 
