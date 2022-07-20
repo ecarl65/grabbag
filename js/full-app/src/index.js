@@ -20,7 +20,7 @@ import { createRoot } from "react-dom/client";
 // import Form from "@rjsf/core";
 // import Form from '@rjsf/bootstrap-4';
 // import App from './App';
-import Form from '@rjsf/antd';
+import Form from '@rjsf/material-ui/v5';
 // import { Button } from 'antd';
 
 // import { withTheme } from '@rjsf/core';
@@ -57,46 +57,172 @@ import Form from '@rjsf/antd';
 //   }
 // }`;
 
+// const schema_txt = `{
+//   "title": "A registration form",
+//   "description": "A simple form example.",
+//   "type": "object",
+//   "required": [
+//     "firstName",
+//     "lastName"
+//   ],
+//   "properties": {
+//     "firstName": {
+//       "type": "string",
+//       "title": "First name",
+//       "default": "Chuck"
+//     },
+//     "lastName": {
+//       "type": "string",
+//       "title": "Last name"
+//     },
+//     "telephone": {
+//       "type": "string",
+//       "title": "Telephone",
+//       "minLength": 10
+//     },
+//     "modes": {
+//       "type": "array",
+//       "items": { "$ref": "#/$defs/sub-array" },
+//       "description": "Modes"
+//     }
+//   },
+//   "$defs": {
+//     "sub-array": {
+//       "type": "object",
+//       "properties": {
+//         "field1": {
+//           "type": "number",
+//           "description": "field 1"
+//         },
+//         "field2": {
+//           "type": "string",
+//           "description": "field 2"
+//         }
+//       }
+//     }
+//   }
+// }`;
+
 const schema_txt = `{
-  "title": "A registration form",
-  "description": "A simple form example.",
+  "title": "Schema dependencies",
+  "description": "These samples are best viewed without live validation.",
   "type": "object",
-  "required": [
-    "firstName",
-    "lastName"
-  ],
   "properties": {
-    "firstName": {
-      "type": "string",
-      "title": "First name",
-      "default": "Chuck"
-    },
-    "lastName": {
-      "type": "string",
-      "title": "Last name"
-    },
-    "telephone": {
-      "type": "string",
-      "title": "Telephone",
-      "minLength": 10
-    },
-    "modes": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/sub-array" },
-      "description": "Modes"
-    }
-  },
-  "$defs": {
-    "sub-array": {
+    "simple": {
+      "src": "https://spacetelescope.github.io/understanding-json-schema/reference/object.html#dependencies",
+      "title": "Simple",
       "type": "object",
       "properties": {
-        "field1": {
-          "type": "number",
-          "description": "field 1"
+        "name": {
+          "type": "string"
         },
-        "field2": {
+        "credit_card": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "dependencies": {
+        "credit_card": {
+          "properties": {
+            "billing_address": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "billing_address"
+          ]
+        }
+      }
+    },
+    "conditional": {
+      "title": "Conditional",
+      "$ref": "#/definitions/person"
+    },
+    "arrayOfConditionals": {
+      "title": "Array of conditionals",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/person"
+      }
+    },
+    "fixedArrayOfConditionals": {
+      "title": "Fixed array of conditionals",
+      "type": "array",
+      "items": [
+        {
+          "title": "Primary person",
+          "$ref": "#/definitions/person"
+        }
+      ],
+      "additionalItems": {
+        "title": "Additional person",
+        "$ref": "#/definitions/person"
+      }
+    }
+  },
+  "definitions": {
+    "person": {
+      "title": "Person",
+      "type": "object",
+      "properties": {
+        "Do you have any pets?": {
           "type": "string",
-          "description": "field 2"
+          "enum": [
+            "No",
+            "Yes: One",
+            "Yes: More than one"
+          ],
+          "default": "No"
+        }
+      },
+      "required": [
+        "Do you have any pets?"
+      ],
+      "dependencies": {
+        "Do you have any pets?": {
+          "oneOf": [
+            {
+              "properties": {
+                "Do you have any pets?": {
+                  "enum": [
+                    "No"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "Do you have any pets?": {
+                  "enum": [
+                    "Yes: One"
+                  ]
+                },
+                "How old is your pet?": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "How old is your pet?"
+              ]
+            },
+            {
+              "properties": {
+                "Do you have any pets?": {
+                  "enum": [
+                    "Yes: More than one"
+                  ]
+                },
+                "Do you want to get rid of any?": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "Do you want to get rid of any?"
+              ]
+            }
+          ]
         }
       }
     }
@@ -110,7 +236,7 @@ function onFormSubmit (event) {
   console.log("---Form submitted---");
   // console.log(event.formData);
   console.log(json_str);
-}
+};
 
 function onFormChange (event) {
       console.log("---Form changed---");
