@@ -16,12 +16,14 @@
  * =====================================================================================
  */
 #include <stdlib.h>
+#include <complex>
 #include <vector>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 #include <Python.h>
 namespace py = pybind11;
+using cdouble = std::complex<double>;
 
 // {{{ add_arrays
 py::array_t<double> add_arrays(py::array_t<double> input1, py::array_t<double> input2, py::array_t<double> output2) {
@@ -76,12 +78,36 @@ py::array nump(py::array arr){
 }
 // }}}
 
+// {{{ cnump
+py::array cnump(py::array arr){
+
+    //initialize values
+    auto arr_obj_prop = arr.request();
+    cdouble *vals = (cdouble*) arr_obj_prop.ptr;
+    unsigned int shape_1 = arr_obj_prop.shape[0];
+    unsigned int shape_2 = arr_obj_prop.shape[1];
+    std::vector<std::vector <cdouble>> vect_arr( shape_1, std::vector<cdouble> (shape_2));
+    cdouble scale = {2, 2};
+
+    for(unsigned int i = 0; i < shape_1; i++){
+      for(unsigned int j = 0; j < shape_2; j++){
+        vect_arr[i][j] = vals[i*shape_2 + j] * scale;
+      }
+    }   
+
+    py::array ret =  py::cast(vect_arr); //py::array(vect_arr.size(), vect_arr.data());
+    return ret;
+
+}
+// }}}
+
 // {{{ PYBIND11_MODULE
 PYBIND11_MODULE(iteration_mod, m) {
 
     m.doc() = "pybind11 module for iterating over generations";
 
     m.def("nump", &nump, "the function which loops over a numpy array");
+    m.def("cnump", &cnump, "the function which loops over a numpy array with complex in/out");
     m.def("add_arrays", &add_arrays, "Add two NumPy arrays");
 }
 // }}}
