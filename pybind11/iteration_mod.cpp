@@ -76,7 +76,7 @@ py::array nump(py::array arr){
 }
 // }}}
 
-// {{{
+// {{{ PYBIND11_MODULE
 PYBIND11_MODULE(iteration_mod, m) {
 
     m.doc() = "pybind11 module for iterating over generations";

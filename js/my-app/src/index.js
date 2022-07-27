@@ -83,7 +83,7 @@ function onFormSubmit (event) {
   console.log("---Form submitted---");
   // console.log(event.formData);
   console.log(json_str);
-}
+};
 
 function onFormChange (event) {
       console.log("---Form changed---");
